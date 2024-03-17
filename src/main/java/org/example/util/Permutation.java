@@ -1,4 +1,4 @@
-package org.example.utils;
+package org.example.util;
 
 public class Permutation {
     public enum DirectionRule {
