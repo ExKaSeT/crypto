@@ -6,17 +6,17 @@ import static org.example.util.Permutation.IndexRule.FROM_1;
 
 public class DesKeyGenerator implements RoundKeyGenerator {
 
-    private final static int[] PC1_1 = {
+    private static final int[] PC1_1 = {
             57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18,
             10, 2, 59, 51, 43, 35, 27, 19, 11, 3, 60, 52, 44, 36
     };
 
-    private final static int[] PC1_2 = {
+    private static final int[] PC1_2 = {
             63, 55, 47, 39, 31, 23, 15, 7, 62, 54, 46, 38, 30, 22,
             14, 6, 61, 53, 45, 37, 29, 21, 13, 5, 28, 20, 12, 4
     };
 
-    private final static int[] PC2 = {
+    private static final int[] PC2 = {
             14, 17, 11, 24, 1, 5, 3, 28, 15, 6, 21, 10,
             23, 19, 12, 4, 26, 8, 16, 7, 27, 20, 13, 2,
             41, 52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48,
@@ -50,15 +50,15 @@ public class DesKeyGenerator implements RoundKeyGenerator {
 
     private byte[] leftShift28bit(final byte[] data, boolean isOneShift) {
         var result = new byte[data.length];
-        int handler = isOneShift ? 1 : 3; // ... 0/1 1
-        int handler1 = 15; // ... 0 0 0 0 1 1 1 1
-        int swapBits = (data[0] >> (isOneShift ? 7 : 6)) & handler;
+        int handler12 = isOneShift ? 1 : 3; // ... 0/1 1
+        int handler4 = 15; // ... 0 0 0 0 1 1 1 1
+        int swapBits = (data[0] >> (isOneShift ? 7 : 6)) & handler12;
         int i = 0;
         for (; i < result.length - 1; i++) {
-            result[i] = (byte) ((data[i] << (isOneShift ? 1 : 2)) | ((data[i + 1] >> (isOneShift ? 7 : 6) & handler)));
+            result[i] = (byte) ((data[i] << (isOneShift ? 1 : 2)) | ((data[i + 1] >> (isOneShift ? 7 : 6) & handler12)));
         }
         // 0 0 0 0 x x x/0 0 - where 'x' is data; x/0 - depends on shift count
-        byte lastByteShifted = (byte) (((data[i] << (isOneShift ? 1 : 2)) >> (4 + (isOneShift ? 1 : 2)) << (isOneShift ? 1 : 2)) & handler1);
+        byte lastByteShifted = (byte) (((data[i] << (isOneShift ? 1 : 2)) >> (4 + (isOneShift ? 1 : 2)) << (isOneShift ? 1 : 2)) & handler4);
         result[i] = (byte) ((lastByteShifted | swapBits) << 4);
         return result;
     }
@@ -66,12 +66,12 @@ public class DesKeyGenerator implements RoundKeyGenerator {
     private byte[] merge28to56bit(final byte[] block1, final byte[] block2) {
         var result = new byte[7];
         System.arraycopy(block1, 0, result, 0,4);
-        int handler1 = 240; // ... 1 1 1 1 0 0 0 0
-        result[3] = (byte) (result[3] | (byte) ((block2[0] & handler1) >> 4));
-        int handler = 15; // ... 0 0 0 0 1 1 1 1
+        int handler40 = 240; // ... 1 1 1 1 0 0 0 0
+        result[3] = (byte) (result[3] | (byte) ((block2[0] & handler40) >> 4));
+        int handler4 = 15; // ... 0 0 0 0 1 1 1 1
         for (int i = 4; i < result.length; i++) {
             int block2Index = i - 4;
-            result[i] = (byte) (((block2[block2Index] & handler) << 4) | ((block2[block2Index + 1] & handler1) >> 4));
+            result[i] = (byte) (((block2[block2Index] & handler4) << 4) | ((block2[block2Index + 1] & handler40) >> 4));
         }
         return result;
     }
