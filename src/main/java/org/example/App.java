@@ -1,6 +1,10 @@
 package org.example;
 
+import org.example.encryption.symmetric.FeistelCipher;
+import org.example.encryption_converter.DesEncryptionConverter;
 import org.example.round_key.DesKeyGenerator;
+
+import java.util.Arrays;
 
 public class App  {
     public static void main( String[] args ) {
@@ -11,9 +15,14 @@ public class App  {
 //        System.out.println(Arrays.toString(res));
 //        printByteArr(res);
 
-        var arr = new byte[] {100, 65, -50, 30, 90, 1, 55, -100};
-        new DesKeyGenerator().generate(arr);
+        var fe = new FeistelCipher(new DesEncryptionConverter(), new DesKeyGenerator());
+        var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100};
+        fe.generateRoundKeys(key);
+        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55, 100};
 
+        System.out.println(Arrays.toString(arr1));
+        var res = fe.decrypt(fe.encrypt(arr1));
+        System.out.println(Arrays.toString(res));
     }
 
 
