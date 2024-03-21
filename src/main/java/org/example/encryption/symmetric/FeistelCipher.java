@@ -6,7 +6,7 @@ import org.example.round_key.RoundKeyGenerator;
 import static java.util.Objects.isNull;
 
 @RequiredArgsConstructor
-public class FeistelCipher implements SymmetricEncryption {
+public abstract class FeistelCipher implements SymmetricEncryption {
 
     private final EncryptionConverter converter;
     private final RoundKeyGenerator keyGenerator;

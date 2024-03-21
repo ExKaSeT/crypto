@@ -1,6 +1,9 @@
 package org.example;
 
 import org.example.encryption.symmetric.DesEncryption;
+import org.example.encryption.symmetric.encryptor.SymmetricEncryptor;
+import org.example.encryption.symmetric.mode.Mode;
+
 import java.util.Arrays;
 
 public class App  {
@@ -15,10 +18,11 @@ public class App  {
         var fe = new DesEncryption();
         var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100};
         fe.generateRoundKeys(key);
-        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55, 100};
+        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55, 100, 87, 88, 89, 90, 91, 92, 93, 94};
 
+        var encryptor = new SymmetricEncryptor(fe, Mode.CBC, SymmetricEncryptor.Padding.ZEROES);
         System.out.println(Arrays.toString(arr1));
-        var res = fe.decrypt(fe.encrypt(arr1));
+        var res = encryptor.decrypt(encryptor.encrypt(arr1));
         System.out.println(Arrays.toString(res));
     }
 

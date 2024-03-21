@@ -13,7 +13,7 @@ public class Permutation {
 
     public static byte[] permute(final byte[] data, final int[] rule, DirectionRule direction, IndexRule indexRule) {
         int bitsLength = rule.length;
-        byte[] result = new byte[(int) Math.ceil(bitsLength / 8.0)];
+        byte[] result = new byte[bitsLength / 8 + (bitsLength % 8 == 0 ? 0 : 1)];
 
         for (int i = 0; i < bitsLength; i++) {
             int index = indexRule == IndexRule.FROM_0 ? rule[i] : rule[i] - 1;

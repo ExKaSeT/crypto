@@ -22,13 +22,15 @@ public class DesEncryption extends FeistelCipher {
             34, 2, 42, 10, 50, 18, 58, 26, 33, 1, 41, 9, 49, 17, 57, 25
     };
 
+    private static final int DATA_LENGTH_BYTES = 8;
+
     public DesEncryption() {
         super(new DesEncryptionConverter(), new DesKeyGenerator());
     }
 
     @Override
     public byte[] encrypt(byte[] data) {
-        if (data.length != 8) {
+        if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
         return super.encrypt(Permutation.permute(data, IP, LEAST_TO_MOST, FROM_1));
@@ -36,10 +38,15 @@ public class DesEncryption extends FeistelCipher {
 
     @Override
     public byte[] decrypt(byte[] data) {
-        if (data.length != 8) {
+        if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
         var result = super.decrypt(data);
         return Permutation.permute(result, FP, LEAST_TO_MOST, FROM_1);
+    }
+
+    @Override
+    public int getSupportedArrayLen() {
+        return DATA_LENGTH_BYTES;
     }
 }

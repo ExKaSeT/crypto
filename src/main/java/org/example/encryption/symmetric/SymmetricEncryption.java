@@ -6,4 +6,6 @@ public interface SymmetricEncryption {
     byte[] decrypt(byte[] data);
 
     void generateRoundKeys(byte[] key);
+
+    int getSupportedArrayLen();
 }
