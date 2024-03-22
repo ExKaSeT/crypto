@@ -1,6 +1,5 @@
 package org.example.encryption.symmetric.mode;
 
-import lombok.Setter;
 import org.example.encryption.symmetric.SymmetricEncryption;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,22 +10,19 @@ import static java.util.Objects.isNull;
 
 public class Cbc extends EncryptionMode {
 
-    @Setter
-    private byte[] previousBlock;
-
     /**
      * Requires different objects for encryption / decryption; saves state
      * */
-    public Cbc(SymmetricEncryption encryption) {
-        super(encryption);
+    public Cbc(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
+        super(encryption, isEncrypt, initialVector);
     }
 
     @Override
-    public byte[] process(byte[][] dataBlocks, boolean isEncrypt, ExecutorService threadPool) {
-        if (isNull(previousBlock)) {
+    public byte[] process(byte[][] dataBlocks, ExecutorService threadPool) {
+        if (isNull(this.initialVector)) {
             throw new IllegalStateException("Previous block not initialized");
         }
-        if (isEncrypt) {
+        if (this.isEncrypt) {
             return encryptBlocks(dataBlocks);
         } else {
             if (isNull(threadPool)) {
@@ -37,14 +33,14 @@ public class Cbc extends EncryptionMode {
     }
 
     public byte[] encrypt(byte[][] dataBlocks) {
-        return this.process(dataBlocks, true, null);
+        return this.process(dataBlocks, null);
     }
 
     private byte[] encryptBlocks(byte[][] dataBlocks) {
         var result = new byte[dataBlocks.length * dataBlocks[0].length];
         int blockLen = dataBlocks[0].length;
         int index = 0;
-        var prevBlock = previousBlock;
+        var prevBlock = this.initialVector;
         for (var block : dataBlocks) {
             var xored = blockXor(block, prevBlock);
             var encrypted = encryption.encrypt(xored);
@@ -52,7 +48,7 @@ public class Cbc extends EncryptionMode {
             index += blockLen;
             prevBlock = encrypted;
         }
-        this.previousBlock = prevBlock;
+        this.initialVector = prevBlock;
         return result;
     }
 
@@ -61,7 +57,7 @@ public class Cbc extends EncryptionMode {
         for (int i = 0; i < dataBlocks.length; i++) {
             byte[] prevBlock;
             if (i == 0) {
-                prevBlock = this.previousBlock;
+                prevBlock = this.initialVector;
             }  else {
                 prevBlock = dataBlocks[i - 1];
             }
@@ -69,6 +65,9 @@ public class Cbc extends EncryptionMode {
             Callable<byte[]> task = () -> blockXor(encryption.decrypt(dataBlocks[finalI]), prevBlock);
             tasks.add(task);
         }
+
+        this.initialVector = dataBlocks[dataBlocks.length - 1];
+
         try {
             int blockLen = dataBlocks[0].length;
             var result = new byte[dataBlocks.length * blockLen];

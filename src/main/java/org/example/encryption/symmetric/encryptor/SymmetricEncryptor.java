@@ -1,8 +1,6 @@
 package org.example.encryption.symmetric.encryptor;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
-import org.example.encryption.symmetric.mode.Cbc;
-import org.example.encryption.symmetric.mode.Ecb;
 import org.example.encryption.symmetric.mode.Mode;
 import java.io.File;
 import java.security.SecureRandom;
@@ -12,71 +10,46 @@ public class SymmetricEncryptor {
     private final SymmetricEncryption encryption;
     private final Mode mode;
     private final Padding padding;
-    private byte[] initVector;
+    private byte[] initialVector;
 
-    public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding, byte[] initVector) {
+    public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding, byte[] initialVector) {
         this.encryption = encryption;
         this.mode = mode;
         this.padding = padding;
-        this.initVector = initVector;
+        this.initialVector = initialVector;
     }
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding) {
         this(encryption, mode, padding, null);
-        initVector = this.generateInitVector(encryption.getSupportedArrayLen());
+        initialVector = this.generateInitVector(encryption.getSupportedArrayLen());
     }
 
     public byte[] encrypt(byte[] data) {
         // TODO: padding
         var dataBlocks = parseToBlocks(data);
-        switch (mode) {
-            case ECB -> {
-                var threadPool = this.getThreadPool();
-                var result = new Ecb(encryption).process(dataBlocks, true, threadPool);
-                threadPool.shutdownNow();
-                return result;
-            }
-            case CBC -> {
-                var mode = new Cbc(encryption);
-                mode.setPreviousBlock(initVector);
-                return mode.encrypt(dataBlocks);
-            }
-            default -> throw new UnsupportedOperationException();
-        }
+        var modeProcessor = mode.getImpl(encryption, true, initialVector);
+        var threadPool = this.getThreadPool();
+        var result = modeProcessor.process(dataBlocks, threadPool);
+        threadPool.shutdownNow();
+        return result;
     }
 
     public byte[] decrypt(byte[] data) {
         var dataBlocks = parseToBlocks(data);
-        switch (mode) {
-            case ECB -> {
-                var threadPool = this.getThreadPool();
-                var result = new Ecb(encryption).process(dataBlocks, false, threadPool);
-                threadPool.shutdownNow();
-                return result;
-            }
-            case CBC -> {
-                var threadPool = this.getThreadPool();
-                var mode = new Cbc(encryption);
-                mode.setPreviousBlock(initVector);
-                var result = mode.process(dataBlocks, false, threadPool);
-                threadPool.shutdownNow();
-                return result;
-            }
-            default -> throw new UnsupportedOperationException();
-        }
+        var modeProcessor = mode.getImpl(encryption, false, initialVector);
+        var threadPool = this.getThreadPool();
+        var result = modeProcessor.process(dataBlocks, threadPool);
+        threadPool.shutdownNow();
+        return result;
     }
 
     public File encrypt(File data) {
         return null;
     }
 
-
-
     public File decrypt(File data) {
         return null;
     }
-
-
 
     private ExecutorService getThreadPool() {
         return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());

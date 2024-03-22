@@ -24,6 +24,7 @@ public class App  {
         System.out.println(Arrays.toString(arr1));
         var res = encryptor.decrypt(encryptor.encrypt(arr1));
         System.out.println(Arrays.toString(res));
+        System.out.println(Arrays.equals(res, arr1));
     }
 
 

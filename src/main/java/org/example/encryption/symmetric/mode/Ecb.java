@@ -9,15 +9,15 @@ import java.util.concurrent.ExecutorService;
 
 public class Ecb extends EncryptionMode {
 
-    public Ecb(SymmetricEncryption encryption) {
-        super(encryption);
+    public Ecb(SymmetricEncryption encryption, boolean isEncrypt) {
+        super(encryption, isEncrypt, null);
     }
 
     @Override
-    public byte[] process(byte[][] dataBlocks, boolean isEncrypt, ExecutorService threadPool) {
+    public byte[] process(byte[][] dataBlocks,ExecutorService threadPool) {
         List<Callable<byte[]>> tasks =  Arrays.stream(dataBlocks)
                 .map(block -> (Callable<byte[]>) () -> {
-                    if (isEncrypt) {
+                    if (this.isEncrypt) {
                         return encryption.encrypt(block);
                     } else {
                         return encryption.decrypt(block);

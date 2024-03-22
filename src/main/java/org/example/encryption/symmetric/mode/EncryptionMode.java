@@ -6,12 +6,16 @@ import java.util.concurrent.ExecutorService;
 public abstract class EncryptionMode {
 
     protected final SymmetricEncryption encryption;
+    protected final boolean isEncrypt;
+    protected byte[] initialVector;
 
-    public EncryptionMode(SymmetricEncryption encryption) {
+    public EncryptionMode(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
         this.encryption = encryption;
+        this.isEncrypt = isEncrypt;
+        this.initialVector = initialVector;
     }
 
-    abstract public byte[] process(byte[][] dataBlocks, boolean isEncrypt, ExecutorService threadPool);
+    abstract public byte[] process(byte[][] dataBlocks, ExecutorService threadPool);
 
     protected byte[] blockXor(byte[] block1, byte[] block2) {
         if (block1.length != block2.length) {
