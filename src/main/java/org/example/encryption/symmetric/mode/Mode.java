@@ -19,6 +19,15 @@ public enum Mode {
             case CBC -> {
                 return new Cbc(encryption, isEncrypt, initialVector);
             }
+            case PCBC -> {
+                return new Pcbc(encryption, isEncrypt, initialVector);
+            }
+            case CFB -> {
+                return new Cfb(encryption, isEncrypt, initialVector);
+            }
+            case OFB -> {
+                return new Ofb(encryption, isEncrypt, initialVector);
+            }
             default -> throw new UnsupportedOperationException();
         }
     }

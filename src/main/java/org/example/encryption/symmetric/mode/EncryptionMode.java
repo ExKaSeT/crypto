@@ -27,4 +27,18 @@ public abstract class EncryptionMode {
         }
         return result;
     }
+
+    /**
+     * Blocks must be same size
+     * */
+    protected byte[] unpackBlocks(byte[][] data) {
+        int blockLen = data[0].length;
+        var result = new byte[data.length * blockLen];
+        int index = 0;
+        for (var block : data) {
+            System.arraycopy(block, 0, result, index, blockLen);
+            index += blockLen;
+        }
+        return result;
+    }
 }

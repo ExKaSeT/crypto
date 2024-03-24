@@ -15,15 +15,15 @@ public class Cbc extends EncryptionMode {
      * */
     public Cbc(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
         super(encryption, isEncrypt, initialVector);
+        if (isNull(this.initialVector)) {
+            throw new IllegalStateException("Previous block not initialized");
+        }
     }
 
     @Override
     public byte[] process(byte[][] dataBlocks, ExecutorService threadPool) {
-        if (isNull(this.initialVector)) {
-            throw new IllegalStateException("Previous block not initialized");
-        }
         if (this.isEncrypt) {
-            return encryptBlocks(dataBlocks);
+            return encrypt(dataBlocks);
         } else {
             if (isNull(threadPool)) {
                 throw new IllegalArgumentException("Thread pool not initialized");
@@ -32,27 +32,22 @@ public class Cbc extends EncryptionMode {
         }
     }
 
-    public byte[] encrypt(byte[][] dataBlocks) {
-        return this.process(dataBlocks, null);
-    }
-
-    private byte[] encryptBlocks(byte[][] dataBlocks) {
-        var result = new byte[dataBlocks.length * dataBlocks[0].length];
-        int blockLen = dataBlocks[0].length;
+    protected byte[] encrypt(byte[][] dataBlocks) {
+        var result = new byte[dataBlocks.length][];
         int index = 0;
         var prevBlock = this.initialVector;
         for (var block : dataBlocks) {
             var xored = blockXor(block, prevBlock);
             var encrypted = encryption.encrypt(xored);
-            System.arraycopy(encrypted, 0, result, index, blockLen);
-            index += blockLen;
+            result[index] = encrypted;
+            index++;
             prevBlock = encrypted;
         }
         this.initialVector = prevBlock;
-        return result;
+        return unpackBlocks(result);
     }
 
-    private byte[] decrypt(byte[][] dataBlocks, ExecutorService threadPool) {
+    protected byte[] decrypt(byte[][] dataBlocks, ExecutorService threadPool) {
         List<Callable<byte[]>> tasks = new ArrayList<>();
         for (int i = 0; i < dataBlocks.length; i++) {
             byte[] prevBlock;
@@ -69,14 +64,13 @@ public class Cbc extends EncryptionMode {
         this.initialVector = dataBlocks[dataBlocks.length - 1];
 
         try {
-            int blockLen = dataBlocks[0].length;
-            var result = new byte[dataBlocks.length * blockLen];
+            var result = new byte[dataBlocks.length][];
             int index = 0;
             for (var future : threadPool.invokeAll(tasks)) {
-                System.arraycopy(future.get(), 0, result, index, blockLen);
-                index += blockLen;
+                result[index] = future.get();
+                index++;
             }
-            return result;
+            return unpackBlocks(result);
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

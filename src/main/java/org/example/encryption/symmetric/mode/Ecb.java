@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import static java.util.Objects.isNull;
 
 public class Ecb extends EncryptionMode {
 
@@ -15,6 +16,10 @@ public class Ecb extends EncryptionMode {
 
     @Override
     public byte[] process(byte[][] dataBlocks,ExecutorService threadPool) {
+        if (isNull(threadPool)) {
+            throw new IllegalArgumentException("Thread pool not initialized");
+        }
+
         List<Callable<byte[]>> tasks =  Arrays.stream(dataBlocks)
                 .map(block -> (Callable<byte[]>) () -> {
                     if (this.isEncrypt) {
@@ -25,14 +30,13 @@ public class Ecb extends EncryptionMode {
                 })
                 .toList();
         try {
-            int blockLen = dataBlocks[0].length;
-            var result = new byte[dataBlocks.length * blockLen];
+            var result = new byte[dataBlocks.length][];
             int index = 0;
             for (var future : threadPool.invokeAll(tasks)) {
-                System.arraycopy(future.get(), 0, result, index, blockLen);
-                index += blockLen;
+                result[index] = future.get();
+                index++;
             }
-            return result;
+            return unpackBlocks(result);
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }

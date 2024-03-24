@@ -6,17 +6,21 @@ import java.io.File;
 import java.security.SecureRandom;
 import java.util.concurrent.*;
 
-public class SymmetricEncryptor {
+import static java.util.Objects.nonNull;
+
+public class SymmetricEncryptor implements AutoCloseable {
     private final SymmetricEncryption encryption;
     private final Mode mode;
     private final Padding padding;
     private byte[] initialVector;
+    private final ExecutorService threadPool;
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding, byte[] initialVector) {
         this.encryption = encryption;
         this.mode = mode;
         this.padding = padding;
         this.initialVector = initialVector;
+        this.threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding) {
@@ -28,19 +32,17 @@ public class SymmetricEncryptor {
         // TODO: padding
         var dataBlocks = parseToBlocks(data);
         var modeProcessor = mode.getImpl(encryption, true, initialVector);
-        var threadPool = this.getThreadPool();
-        var result = modeProcessor.process(dataBlocks, threadPool);
-        threadPool.shutdownNow();
-        return result;
+        return modeProcessor.process(dataBlocks, this.threadPool);
     }
 
     public byte[] decrypt(byte[] data) {
         var dataBlocks = parseToBlocks(data);
         var modeProcessor = mode.getImpl(encryption, false, initialVector);
-        var threadPool = this.getThreadPool();
-        var result = modeProcessor.process(dataBlocks, threadPool);
-        threadPool.shutdownNow();
-        return result;
+        return modeProcessor.process(dataBlocks, this.threadPool);
+    }
+
+    public byte[] getInitialVector() {
+        return this.initialVector.clone();
     }
 
     public File encrypt(File data) {
@@ -49,10 +51,6 @@ public class SymmetricEncryptor {
 
     public File decrypt(File data) {
         return null;
-    }
-
-    private ExecutorService getThreadPool() {
-        return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     private byte[] generateInitVector(int lengthBytes) {
@@ -76,6 +74,13 @@ public class SymmetricEncryptor {
             dataBlocks[i] = block;
         }
         return dataBlocks;
+    }
+
+    @Override
+    public void close() {
+        if (nonNull(this.threadPool)) {
+            this.threadPool.shutdownNow();
+        }
     }
 
     public enum Padding {
