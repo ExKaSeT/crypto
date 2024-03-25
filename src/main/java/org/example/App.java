@@ -21,7 +21,7 @@ public class App  {
         encryption.generateRoundKeys(key);
         var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55, 100, 87, 88, 89, 90, 91, 92, 93, 94};
 
-        var mode = Mode.OFB;
+        var mode = Mode.RANDOM_DELTA;
 
         var encryptor = new SymmetricEncryptor(encryption, mode, SymmetricEncryptor.Padding.ZEROES);
         var initVector = encryptor.getInitialVector();

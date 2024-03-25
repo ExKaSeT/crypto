@@ -28,6 +28,12 @@ public enum Mode {
             case OFB -> {
                 return new Ofb(encryption, isEncrypt, initialVector);
             }
+            case CTR -> {
+                return new Ctr(encryption, isEncrypt, initialVector);
+            }
+            case RANDOM_DELTA -> {
+                return new RandomDelta(encryption, isEncrypt, initialVector);
+            }
             default -> throw new UnsupportedOperationException();
         }
     }
