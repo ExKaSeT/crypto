@@ -46,7 +46,7 @@ public class DesEncryption extends FeistelCipher {
     }
 
     @Override
-    public int getSupportedArrayLen() {
+    public int getBlockLenBytes() {
         return DATA_LENGTH_BYTES;
     }
 }

@@ -7,5 +7,5 @@ public interface SymmetricEncryption {
 
     void generateRoundKeys(byte[] key);
 
-    int getSupportedArrayLen();
+    int getBlockLenBytes();
 }

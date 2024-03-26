@@ -25,12 +25,12 @@ public class SymmetricEncryptor implements AutoCloseable {
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding) {
         this(encryption, mode, padding, null);
-        initialVector = this.generateInitVector(encryption.getSupportedArrayLen());
+        initialVector = this.generateInitVector(encryption.getBlockLenBytes());
     }
 
     public byte[] encrypt(byte[] data) {
-        // TODO: padding
-        var dataBlocks = parseToBlocks(data);
+        var withPadding = padding.add(data, encryption.getBlockLenBytes());
+        var dataBlocks = parseToBlocks(withPadding);
         var modeProcessor = mode.getImpl(encryption, true, initialVector);
         return modeProcessor.process(dataBlocks, this.threadPool);
     }
@@ -38,7 +38,8 @@ public class SymmetricEncryptor implements AutoCloseable {
     public byte[] decrypt(byte[] data) {
         var dataBlocks = parseToBlocks(data);
         var modeProcessor = mode.getImpl(encryption, false, initialVector);
-        return modeProcessor.process(dataBlocks, this.threadPool);
+        var decrypted = modeProcessor.process(dataBlocks, this.threadPool);
+        return padding.remove(decrypted);
     }
 
     public byte[] getInitialVector() {
@@ -61,10 +62,9 @@ public class SymmetricEncryptor implements AutoCloseable {
     }
 
     private byte[][] parseToBlocks(byte[] data) {
-        // TODO: padding
-        var blockLen = encryption.getSupportedArrayLen();
+        int blockLen = encryption.getBlockLenBytes();
         if (data.length % blockLen != 0) {
-            throw new RuntimeException(); // TODO: remove
+            throw new IllegalArgumentException();
         }
 
         var dataBlocks = new byte[data.length / blockLen][];
@@ -81,12 +81,5 @@ public class SymmetricEncryptor implements AutoCloseable {
         if (nonNull(this.threadPool)) {
             this.threadPool.shutdownNow();
         }
-    }
-
-    public enum Padding {
-        ZEROES,
-        ANSI_X_923,
-        PKCS7,
-        ISO10126
     }
 }
