@@ -81,6 +81,4 @@ public enum Padding {
     private int byteToUnsigned(byte b) {
         return b & 255;
     }
-
-
 }

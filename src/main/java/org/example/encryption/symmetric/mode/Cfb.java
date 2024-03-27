@@ -1,7 +1,7 @@
 package org.example.encryption.symmetric.mode;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
-
+import org.example.util.EncryptionUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -23,7 +23,7 @@ public class Cfb extends Cbc {
         var initVector = this.initialVector;
         for (var block : dataBlocks) {
             var initVectorEncrypted = encryption.encrypt(initVector);
-            var xored = blockXor(block, initVectorEncrypted);
+            var xored = EncryptionUtil.blockXor(block, initVectorEncrypted);
             result[index] = xored;
             index++;
             initVector = xored;
@@ -59,7 +59,7 @@ public class Cfb extends Cbc {
 
         var result = new byte[dataBlocks.length][];
         for (int i = 0; i < dataBlocks.length; i++) {
-            var plaintext = blockXor(dataBlocks[i], encrypted[i]);
+            var plaintext = EncryptionUtil.blockXor(dataBlocks[i], encrypted[i]);
             result[i] = plaintext;
         }
 

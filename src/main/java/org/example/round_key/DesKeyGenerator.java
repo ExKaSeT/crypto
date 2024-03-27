@@ -23,9 +23,11 @@ public class DesKeyGenerator implements RoundKeyGenerator {
             44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32
     };
 
+    private static final int KEY_LENGTH_BYTES = 8;
+
     @Override
     public byte[][] generate(byte[] key) {
-        if (key.length != 8) {
+        if (key.length != KEY_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect key length");
         }
 
@@ -46,6 +48,11 @@ public class DesKeyGenerator implements RoundKeyGenerator {
             keys[i - 1] = block;
         }
         return keys;
+    }
+
+    @Override
+    public int getKeyLenBytes() {
+        return KEY_LENGTH_BYTES;
     }
 
     private byte[] leftShift28bit(final byte[] data, boolean isOneShift) {

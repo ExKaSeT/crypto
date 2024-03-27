@@ -2,13 +2,17 @@ package org.example.encryption.symmetric.encryptor;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
 import org.example.encryption.symmetric.mode.Mode;
-import java.io.File;
+import java.io.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.concurrent.*;
-
 import static java.util.Objects.nonNull;
 
 public class SymmetricEncryptor implements AutoCloseable {
+    private static final int MAX_BYTE_BUFFER_LENGTH = 1000;
+    private final int byteBufferLength;
+
     private final SymmetricEncryption encryption;
     private final Mode mode;
     private final Padding padding;
@@ -17,6 +21,10 @@ public class SymmetricEncryptor implements AutoCloseable {
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding, byte[] initialVector) {
         this.encryption = encryption;
+        this.byteBufferLength = MAX_BYTE_BUFFER_LENGTH - MAX_BYTE_BUFFER_LENGTH % encryption.getBlockLenBytes();
+        if (encryption.getBlockLenBytes() >= byteBufferLength) {
+            throw new IllegalArgumentException();
+        }
         this.mode = mode;
         this.padding = padding;
         this.initialVector = initialVector;
@@ -46,7 +54,24 @@ public class SymmetricEncryptor implements AutoCloseable {
         return this.initialVector.clone();
     }
 
-    public File encrypt(File data) {
+    public File encrypt(File data) throws IOException {
+        File output = Path.of(data.getPath(), "encrypted", data.getName()).toFile();
+        if (output.exists()) {
+            throw new FileAlreadyExistsException("File '" + output.getAbsolutePath() + "' already exists");
+        }
+
+        try (FileInputStream inputStream = new FileInputStream(data);
+             FileOutputStream outputStream = new FileOutputStream(output)) {
+
+            byte[] buffer = new byte[byteBufferLength];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                if (bytesRead != byteBufferLength) {
+
+                }
+                outputStream.write(buffer, 0, bytesRead);
+            }
+        }
         return null;
     }
 

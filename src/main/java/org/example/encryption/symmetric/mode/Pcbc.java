@@ -1,6 +1,7 @@
 package org.example.encryption.symmetric.mode;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
+import org.example.util.EncryptionUtil;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -22,11 +23,11 @@ public class Pcbc extends Cbc {
         int index = 0;
         var plainXoredCipherText = this.initialVector;
         for (var block : dataBlocks) {
-            var xored = blockXor(block, plainXoredCipherText);
+            var xored = EncryptionUtil.blockXor(block, plainXoredCipherText);
             var encrypted = encryption.encrypt(xored);
             result[index] = encrypted;
             index++;
-            plainXoredCipherText = blockXor(block, encrypted);
+            plainXoredCipherText = EncryptionUtil.blockXor(block, encrypted);
         }
         this.initialVector = plainXoredCipherText;
         return unpackBlocks(result);
@@ -53,9 +54,9 @@ public class Pcbc extends Cbc {
         var result = new byte[dataBlocks.length][];
         var plainXoredCipherText = this.initialVector;
         for (int i = 0; i < decrypted.length; i++) {
-            var plaintext = blockXor(decrypted[i], plainXoredCipherText);
+            var plaintext = EncryptionUtil.blockXor(decrypted[i], plainXoredCipherText);
             result[i] = plaintext;
-            plainXoredCipherText = blockXor(plaintext, dataBlocks[i]);
+            plainXoredCipherText = EncryptionUtil.blockXor(plaintext, dataBlocks[i]);
         }
 
         this.initialVector = plainXoredCipherText;

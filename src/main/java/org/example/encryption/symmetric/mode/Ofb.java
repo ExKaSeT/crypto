@@ -1,6 +1,7 @@
 package org.example.encryption.symmetric.mode;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
+import org.example.util.EncryptionUtil;
 import java.util.concurrent.ExecutorService;
 
 public class Ofb extends EncryptionMode {
@@ -19,7 +20,7 @@ public class Ofb extends EncryptionMode {
         var initVector = this.initialVector;
         for (var block : dataBlocks) {
             var encrypted = encryption.encrypt(initVector);
-            var xored = blockXor(encrypted, block);
+            var xored = EncryptionUtil.blockXor(encrypted, block);
             result[index] = xored;
             index++;
             initVector = encrypted;

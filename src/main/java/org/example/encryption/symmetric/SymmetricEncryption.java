@@ -8,4 +8,6 @@ public interface SymmetricEncryption {
     void generateRoundKeys(byte[] key);
 
     int getBlockLenBytes();
+
+    int getKeyLenBytes();
 }

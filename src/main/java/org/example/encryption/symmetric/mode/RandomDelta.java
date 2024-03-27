@@ -1,6 +1,7 @@
 package org.example.encryption.symmetric.mode;
 
 import org.example.encryption.symmetric.SymmetricEncryption;
+import org.example.util.EncryptionUtil;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ public class RandomDelta extends EncryptionMode {
         int maxBitLength = initialVector.length * 8;
         for (var block : dataBlocks) {
             var counterBytes = counter.toByteArray();
-            Callable<byte[]> task = () -> blockXor(encryption.encrypt(counterBytes), block);
+            Callable<byte[]> task = () -> EncryptionUtil.blockXor(encryption.encrypt(counterBytes), block);
             tasks.add(task);
             counter = counter.add(delta);
             if (counter.bitLength() > maxBitLength) {

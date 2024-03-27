@@ -17,17 +17,6 @@ public abstract class EncryptionMode {
 
     abstract public byte[] process(byte[][] dataBlocks, ExecutorService threadPool);
 
-    protected byte[] blockXor(byte[] block1, byte[] block2) {
-        if (block1.length != block2.length) {
-            throw new IllegalArgumentException();
-        }
-        var result = new byte[block1.length];
-        for (int i = 0; i < block1.length; i++) {
-            result[i] = (byte) (block1[i] ^ block2[i]);
-        }
-        return result;
-    }
-
     /**
      * Blocks must be same size
      * */

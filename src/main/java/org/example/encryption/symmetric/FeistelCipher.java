@@ -67,4 +67,9 @@ public abstract class FeistelCipher implements SymmetricEncryption {
     public void generateRoundKeys(byte[] key) {
         this.roundKeys = keyGenerator.generate(key);
     }
+
+    @Override
+    public int getKeyLenBytes() {
+        return this.keyGenerator.getKeyLenBytes();
+    }
 }
