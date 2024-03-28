@@ -26,7 +26,7 @@ public class Ctr extends EncryptionMode {
         List<Callable<byte[]>> tasks = new ArrayList<>();
         int maxBitLength = initialVector.length * 8;
         for (var block : dataBlocks) {
-            var counterBytes = counter.toByteArray();
+            var counterBytes = EncryptionUtil.addMinorBytes(counter.toByteArray(), initialVector.length);
             Callable<byte[]> task = () -> EncryptionUtil.blockXor(encryption.encrypt(counterBytes), block);
             tasks.add(task);
             counter = counter.add(BigInteger.ONE);

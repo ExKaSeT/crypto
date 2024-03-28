@@ -1,46 +1,46 @@
 package org.example;
 
+import org.example.encryption.symmetric.DealEncryption;
 import org.example.encryption.symmetric.DesEncryption;
 import org.example.encryption.symmetric.SymmetricEncryption;
 import org.example.encryption.symmetric.encryptor.Padding;
 import org.example.encryption.symmetric.encryptor.SymmetricEncryptor;
 import org.example.encryption.symmetric.mode.Mode;
-import java.util.Arrays;
+import org.example.round_key.DealKeyGenerator;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.concurrent.ExecutionException;
+import static org.example.round_key.DealKeyGenerator.DealKeySize.KEY256;
 
 public class App  {
-    public static void main( String[] args ) {
-//        byte[] arr = intToByteArray(923456789);
-//        printByteArr(arr);
-//        System.out.println(Arrays.toString(arr));
-//        byte[] res = Permutation.permute(arr, new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,17,18,19,20,21,22,23,24,25,26,27,28,29}, Permutation.DirectionRule.LEAST_TO_MOST, Permutation.IndexRule.FROM_0);
-//        System.out.println(Arrays.toString(res));
-//        printByteArr(res);
+    public static void main( String[] args ) throws IOException, ExecutionException, InterruptedException {
 
-        var encryption = new DesEncryption();
-        var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100};
+        var encryption = new DealEncryption(new DealKeyGenerator(KEY256));
+        var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100};
+
+//        var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100};
+//        var encryption = new DesEncryption();
+
         encryption.generateRoundKeys(key);
-        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55, 100, 87, 88, 89, 90, 91, 92, 93, 100, 3, 5};
+//        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55};
 
-        var mode = Mode.RANDOM_DELTA;
+        var mode = Mode.OFB;
+        var padding = Padding.ISO10126;
+        var file = Path.of("C:/Users/kek/Desktop/homiak.gif").toFile();
 
-        var encryptor = new SymmetricEncryptor(encryption, mode, Padding.ZEROES);
-        var initVector = encryptor.getInitialVector();
-        System.out.println(Arrays.toString(arr1));
-        var res = encryptor.decrypt(encryptor.encrypt(arr1));
-        System.out.println(Arrays.toString(res));
-        System.out.println(Arrays.equals(res, arr1));
+        var encryptor = new SymmetricEncryptor(encryption, mode, padding);
+        var enc = encryptor.encryptAsync(file).get();
+        var dec = encryptor.decryptAsync(enc).get();
+        System.out.println(file.length() == dec.length());
+        enc.delete();
+        dec.delete();
 
-//        var modeImpl = mode.getImpl(encryption, true, initVector);
-//        var modeImplDecrypt = mode.getImpl(encryption, false, initVector);
-//        var dataBlocks = parseToBlocks(arr1, encryption);
-//        var block1 = modeImpl.process(new byte[][] {dataBlocks[0]}, ForkJoinPool.commonPool());
-//        var block2 = modeImpl.process(new byte[][] {dataBlocks[1]}, ForkJoinPool.commonPool());
-//        block1 = modeImplDecrypt.process(new byte[][] {block1}, ForkJoinPool.commonPool());
-//        block2 = modeImplDecrypt.process(new byte[][] {block2}, ForkJoinPool.commonPool());
-//        var res1 = new byte[arr1.length];
-//        System.arraycopy(block1, 0, res1, 0, block1.length);
-//        System.arraycopy(block2, 0, res1, block1.length, block2.length);
-//        System.out.println(Arrays.equals(res1, arr1));
+
+//        var initVector = encryptor.getInitialVector();
+//        System.out.println(Arrays.toString(arr1));
+//        var res = encryptor.decrypt(encryptor.encrypt(arr1));
+//        System.out.println(Arrays.toString(res));
+//        System.out.println(Arrays.equals(res, arr1));
 
         encryptor.close();
     }

@@ -50,11 +50,6 @@ public class DesKeyGenerator implements RoundKeyGenerator {
         return keys;
     }
 
-    @Override
-    public int getKeyLenBytes() {
-        return KEY_LENGTH_BYTES;
-    }
-
     private byte[] leftShift28bit(final byte[] data, boolean isOneShift) {
         var result = new byte[data.length];
         int handler12 = isOneShift ? 1 : 3; // ... 0/1 1

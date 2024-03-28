@@ -92,11 +92,6 @@ public class DealKeyGenerator implements RoundKeyGenerator {
 
         return resultKeys;
     }
-    
-    @Override
-    public int getKeyLenBytes() {
-        return this.keySize.getSizeBytes();
-    }
 
     @Getter
     @RequiredArgsConstructor
