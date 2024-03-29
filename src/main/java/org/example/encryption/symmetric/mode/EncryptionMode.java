@@ -12,7 +12,7 @@ public abstract class EncryptionMode {
     public EncryptionMode(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
         this.encryption = encryption;
         this.isEncrypt = isEncrypt;
-        this.initialVector = initialVector;
+        this.initialVector = initialVector.clone();
     }
 
     abstract public byte[] process(byte[][] dataBlocks, ExecutorService threadPool);
