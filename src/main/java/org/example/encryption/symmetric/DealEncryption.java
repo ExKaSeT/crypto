@@ -7,8 +7,8 @@ public class DealEncryption extends FeistelCipher {
 
     private static final int DATA_LENGTH_BYTES = 16;
 
-    public DealEncryption(DealKeyGenerator keyGenerator) {
-        super(new DealEncryptionConverter(), keyGenerator);
+    public DealEncryption(DealKeyGenerator.DealKeySize keySize) {
+        super(new DealEncryptionConverter(), new DealKeyGenerator(keySize));
     }
 
 

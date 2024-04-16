@@ -33,7 +33,8 @@ public class DesEncryption extends FeistelCipher {
         if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
-        return super.encrypt(Permutation.permute(data, IP, LEAST_TO_MOST, FROM_1));
+        var result = super.encrypt(Permutation.permute(data, IP, LEAST_TO_MOST, FROM_1));
+        return Permutation.permute(result, FP, LEAST_TO_MOST, FROM_1);
     }
 
     @Override
@@ -41,7 +42,7 @@ public class DesEncryption extends FeistelCipher {
         if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
-        var result = super.decrypt(data);
+        var result = super.decrypt(Permutation.permute(data, IP, LEAST_TO_MOST, FROM_1));
         return Permutation.permute(result, FP, LEAST_TO_MOST, FROM_1);
     }
 
