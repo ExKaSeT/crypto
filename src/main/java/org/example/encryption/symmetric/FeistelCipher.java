@@ -6,7 +6,7 @@ import org.example.round_key.RoundKeyGenerator;
 import static java.util.Objects.isNull;
 
 @RequiredArgsConstructor
-public abstract class FeistelCipher implements SymmetricEncryption {
+public class FeistelCipher implements SymmetricEncryption {
 
     private final EncryptionConverter converter;
     private final RoundKeyGenerator keyGenerator;
@@ -66,5 +66,10 @@ public abstract class FeistelCipher implements SymmetricEncryption {
     @Override
     public void generateRoundKeys(byte[] key) {
         this.roundKeys = keyGenerator.generate(key);
+    }
+
+    @Override
+    public int getBlockLenBytes() {
+        throw new UnsupportedOperationException();
     }
 }

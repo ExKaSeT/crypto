@@ -1,5 +1,7 @@
 package org.example.encryption.symmetric.encryptor;
 
+import org.example.util.EncryptionUtil;
+
 import java.security.SecureRandom;
 
 public enum Padding {
@@ -55,7 +57,7 @@ public enum Padding {
                 return result;
             }
             case ANSI_X_923, PKCS7, ISO10126 -> {
-                int paddingLength = this.byteToUnsigned(data[data.length - 1]);
+                int paddingLength = EncryptionUtil.byteToUnsigned(data[data.length - 1]);
                 int paddingIndex = data.length - paddingLength;
                 var result = new byte[paddingIndex];
                 System.arraycopy(data, 0, result, 0, paddingIndex);
@@ -76,9 +78,5 @@ public enum Padding {
         int paddingLength = result.length - data.length;
         result[result.length - 1] = (byte) paddingLength;
         return result;
-    }
-
-    private int byteToUnsigned(byte b) {
-        return b & 255;
     }
 }
