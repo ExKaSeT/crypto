@@ -5,17 +5,16 @@ import org.example.round_key.DealKeyGenerator;
 
 public class DealEncryption extends FeistelCipher {
 
-    private final DealKeyGenerator.DealKeySize keySize;
+    private static final int DATA_LENGTH_BYTES = 16;
 
     public DealEncryption(DealKeyGenerator.DealKeySize keySize) {
         super(new DealEncryptionConverter(), new DealKeyGenerator(keySize));
-        this.keySize = keySize;
     }
 
 
     @Override
     public byte[] encrypt(byte[] data) {
-        if (data.length != keySize.getSizeBytes()) {
+        if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
 
@@ -24,7 +23,7 @@ public class DealEncryption extends FeistelCipher {
 
     @Override
     public byte[] decrypt(byte[] data) {
-        if (data.length != keySize.getSizeBytes()) {
+        if (data.length != DATA_LENGTH_BYTES) {
             throw new IllegalArgumentException("Incorrect data length");
         }
 
@@ -33,6 +32,6 @@ public class DealEncryption extends FeistelCipher {
 
     @Override
     public int getBlockLenBytes() {
-        return keySize.getSizeBytes();
+        return DATA_LENGTH_BYTES;
     }
 }
