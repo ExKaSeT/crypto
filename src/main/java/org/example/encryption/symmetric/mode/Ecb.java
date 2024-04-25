@@ -10,8 +10,8 @@ import static java.util.Objects.isNull;
 
 public class Ecb extends EncryptionMode {
 
-    public Ecb(SymmetricEncryption encryption, boolean isEncrypt) {
-        super(encryption, isEncrypt, null);
+    public Ecb(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
+        super(encryption, isEncrypt, initialVector);
     }
 
     @Override

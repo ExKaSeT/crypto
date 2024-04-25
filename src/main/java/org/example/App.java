@@ -24,16 +24,19 @@ public class App {
         encryption.generateRoundKeys(key);
 //        var arr1 = new byte[] {100, 65, -50, 1, -100, 1, 55};
 
-        var mode = Mode.OFB;
-        var padding = Padding.ISO10126;
-        var file = Path.of("C:/Users/kek/Desktop/homiak.gif").toFile();
+        for (var mode : Mode.values()) {
+            var padding = Padding.ISO10126;
+            var file = Path.of("C:/Users/kek/Desktop/homiak.gif").toFile();
 
-        var encryptor = new SymmetricEncryptor(encryption, mode, padding);
-        var enc = encryptor.encryptAsync(file).get();
-        var dec = encryptor.decryptAsync(enc).get();
-        System.out.println(file.length() == dec.length());
-        enc.delete();
-        dec.delete();
+            var encryptor = new SymmetricEncryptor(encryption, mode, padding);
+            var enc = encryptor.encryptAsync(file).get();
+            var dec = encryptor.decryptAsync(enc).get();
+            System.out.println(file.length() == dec.length());
+            enc.delete();
+            dec.delete();
+
+            encryptor.close();
+        }
 
 
 //        var initVector = encryptor.getInitialVector();
@@ -42,7 +45,6 @@ public class App {
 //        System.out.println(Arrays.toString(res));
 //        System.out.println(Arrays.equals(res, arr1));
 
-        encryptor.close();
     }
 
     public static byte[][] parseToBlocks(byte[] data, SymmetricEncryption encryption) {

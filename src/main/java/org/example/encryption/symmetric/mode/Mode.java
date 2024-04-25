@@ -14,7 +14,7 @@ public enum Mode {
     public EncryptionMode getImpl(SymmetricEncryption encryption, boolean isEncrypt, byte[] initialVector) {
         switch (this) {
             case ECB -> {
-                return new Ecb(encryption, isEncrypt);
+                return new Ecb(encryption, isEncrypt, initialVector);
             }
             case CBC -> {
                 return new Cbc(encryption, isEncrypt, initialVector);
