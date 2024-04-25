@@ -8,10 +8,10 @@ import static java.util.Objects.isNull;
 @RequiredArgsConstructor
 public class FeistelCipher implements SymmetricEncryption {
 
-    private final EncryptionConverter converter;
-    private final RoundKeyGenerator keyGenerator;
+    protected final EncryptionConverter converter;
+    protected final RoundKeyGenerator keyGenerator;
 
-    private byte[][] roundKeys;
+    protected byte[][] roundKeys;
 
     @Override
     public byte[] encrypt(byte[] data) {
