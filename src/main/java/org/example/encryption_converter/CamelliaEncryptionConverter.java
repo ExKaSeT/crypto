@@ -38,10 +38,10 @@ public class CamelliaEncryptionConverter implements EncryptionConverter {
         r[0] = (byte) SBOX1[byteToUnsigned(r[0])];
         r[1] = leftCycleShift((byte) SBOX1[byteToUnsigned(r[1])], 1);
         r[2] = leftCycleShift((byte) SBOX1[byteToUnsigned(r[2])], 7);
-        r[3] = (byte) SBOX1[leftCycleShift(r[3], 1)];
+        r[3] = (byte) SBOX1[byteToUnsigned(leftCycleShift(r[3], 1))];
         r[4] = leftCycleShift((byte) SBOX1[byteToUnsigned(r[4])], 1);
         r[5] = leftCycleShift((byte) SBOX1[byteToUnsigned(r[5])], 7);
-        r[6] = (byte) SBOX1[leftCycleShift(r[6], 1)];
+        r[6] = (byte) SBOX1[byteToUnsigned(leftCycleShift(r[6], 1))];
         r[7] = (byte) SBOX1[byteToUnsigned(r[7])];
         // p-function
         r[0] = (byte) (r[0] ^ r[2] ^ r[3] ^ r[5] ^ r[6] ^ r[7]);

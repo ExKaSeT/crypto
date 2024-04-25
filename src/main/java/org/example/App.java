@@ -1,19 +1,22 @@
 package org.example;
 
-import org.example.encryption.symmetric.DealEncryption;
+import org.example.encryption.symmetric.CamelliaEncryption;
 import org.example.encryption.symmetric.SymmetricEncryption;
 import org.example.encryption.symmetric.encryptor.Padding;
 import org.example.encryption.symmetric.encryptor.SymmetricEncryptor;
 import org.example.encryption.symmetric.mode.Mode;
+import org.example.round_key.CamelliaKeyGenerator;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
-import static org.example.round_key.DealKeyGenerator.DealKeySize.KEY256;
 
 public class App {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
 
-        var encryption = new DealEncryption(KEY256);
+        var encryption = new CamelliaEncryption(CamelliaKeyGenerator.CamelliaKeySize.KEY256);
         var key = new byte[]{100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100};
+
+//        var encryption = new DealEncryption(KEY256);
+//        var key = new byte[]{100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100, 100, 65, -50, 30, 90, 1, -55, 100};
 
 //        var key = new byte[] {100, 65, -50, 30, 90, 1, -55, 100};
 //        var encryption = new DesEncryption();
