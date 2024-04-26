@@ -2,19 +2,22 @@ package org.example.encryption.symmetric;
 
 import org.example.encryption_converter.CamelliaEncryptionConverter;
 import org.example.round_key.CamelliaKeyGenerator;
-import org.example.util.EncryptionUtil;
-
 import java.util.Arrays;
+import static org.example.util.EncryptionUtil.byteArrayToLong;
+import static org.example.util.EncryptionUtil.longToByteArray;
 
-public class CamelliaEncryption extends FeistelCipher {
+public class CamelliaEncryption implements SymmetricEncryption {
 
     private static final int DATA_LENGTH_BYTES = 16;
-    private byte[][][] roundKeys;
-    private byte[][] klSubkeys;
-    private byte[][] kwSubkeys;
+    private final CamelliaEncryptionConverter converter;
+    private final CamelliaKeyGenerator keyGenerator;
+    private byte[][] roundKeys;
+    private long[] klSubkeys;
+    private long[] kwSubkeys;
 
     public CamelliaEncryption(CamelliaKeyGenerator.CamelliaKeySize keySize) {
-        super(new CamelliaEncryptionConverter(), new CamelliaKeyGenerator(keySize));
+        this.converter = new CamelliaEncryptionConverter();
+        this.keyGenerator = new CamelliaKeyGenerator(keySize);
     }
 
     @Override
@@ -23,24 +26,28 @@ public class CamelliaEncryption extends FeistelCipher {
             throw new IllegalArgumentException("Incorrect data length");
         }
 
-        xor16byteWithTwo8byte(data, kwSubkeys[0], kwSubkeys[1]);
+        long D1 = byteArrayToLong(Arrays.copyOf(data, 8));
+        long D2 = byteArrayToLong(Arrays.copyOfRange(data, 8, 16));
 
+        D1 = D1 ^ kwSubkeys[0];
+        D2 = D2 ^ kwSubkeys[1];
         int klIndex = 0;
-        for (byte[][] roundKey : this.roundKeys) {
-            super.roundKeys = roundKey;
-            data = super.encrypt(data);
-            swap8byteBlocks(data);
-
-            if (klIndex < klSubkeys.length) {
-                var leftPart = this.FL(Arrays.copyOf(data, 8), klSubkeys[klIndex]);
-                var rightPart = this.FLInv(Arrays.copyOfRange(data, 8, 16), klSubkeys[klIndex + 1]);
-                xor16byteWithTwo8byte(data, leftPart, rightPart);
+        for (int round = 0; round < roundKeys.length; round += 2) {
+            if (round == 6 || round == 12 || round == 18) {
+                D1 = FL(D1, klSubkeys[klIndex]);
+                D2 = FLInv(D2, klSubkeys[klIndex + 1]);
                 klIndex += 2;
             }
+            D2 = D2 ^ byteArrayToLong(converter.convert(longToByteArray(D1), roundKeys[round]));
+            D1 = D1 ^ byteArrayToLong(converter.convert(longToByteArray(D2), roundKeys[round + 1]));
         }
+        D2 = D2 ^ kwSubkeys[2];
+        D1 = D1 ^ kwSubkeys[3];
 
-        xor16byteWithTwo8byte(data, kwSubkeys[2], kwSubkeys[3]);
-        return data;
+        var result = Arrays.copyOf(longToByteArray(D2), 16);
+        System.arraycopy(longToByteArray(D1), 0, result, 8, 8);
+
+        return result;
     }
 
     @Override
@@ -49,41 +56,36 @@ public class CamelliaEncryption extends FeistelCipher {
             throw new IllegalArgumentException("Incorrect data length");
         }
 
-        xor16byteWithTwo8byte(data, kwSubkeys[2], kwSubkeys[3]);
+        long D1 = byteArrayToLong(Arrays.copyOf(data, 8));
+        long D2 = byteArrayToLong(Arrays.copyOfRange(data, 8, 16));
 
+        D1 = D1 ^ kwSubkeys[2];
+        D2 = D2 ^ kwSubkeys[3];
         int klIndex = klSubkeys.length - 1;
-        for (int roundsOf6Rounds = this.roundKeys.length - 1; roundsOf6Rounds >= 0; roundsOf6Rounds--) {
-            super.roundKeys = this.roundKeys[roundsOf6Rounds];
-            data = super.decrypt(data);
-            swap8byteBlocks(data);
-
-            if (klIndex > 0) {
-                var leftPart = this.FL(Arrays.copyOf(data, 8), klSubkeys[klIndex]);
-                var rightPart = this.FLInv(Arrays.copyOfRange(data, 8, 16), klSubkeys[klIndex - 1]);
-                xor16byteWithTwo8byte(data, leftPart, rightPart);
+        for (int round = 0; round < roundKeys.length; round += 2) {
+            if (round == 6 || round == 12 || round == 18) {
+                D1 = FL(D1, klSubkeys[klIndex]);
+                D2 = FLInv(D2, klSubkeys[klIndex - 1]);
                 klIndex -= 2;
             }
+            int reverseRound = roundKeys.length - round - 1;
+            D2 = D2 ^ byteArrayToLong(converter.convert(longToByteArray(D1), roundKeys[reverseRound]));
+            D1 = D1 ^ byteArrayToLong(converter.convert(longToByteArray(D2), roundKeys[reverseRound - 1]));
         }
+        D2 = D2 ^ kwSubkeys[0];
+        D1 = D1 ^ kwSubkeys[1];
 
-        xor16byteWithTwo8byte(data, kwSubkeys[0], kwSubkeys[1]);
-        return data;
+        var result = Arrays.copyOf(longToByteArray(D2), 16);
+        System.arraycopy(longToByteArray(D1), 0, result, 8, 8);
+
+        return result;
     }
 
     @Override
     public void generateRoundKeys(byte[] key) {
-        var keyGenerator = (CamelliaKeyGenerator) super.keyGenerator;
-
-        var roundKeys = keyGenerator.generate(key);
-
-        this.roundKeys = new byte[roundKeys.length / 6][][];
-        int arrayIndex = 0;
-        for (int part = 0; part < roundKeys.length; part += 6) {
-            this.roundKeys[arrayIndex] = Arrays.copyOfRange(roundKeys, part, part + 6);
-            arrayIndex++;
-        }
-
-        this.klSubkeys = Arrays.stream(keyGenerator.getKlSubkeys()).mapToObj(EncryptionUtil::longToByteArray).toArray(byte[][]::new);
-        this.kwSubkeys = Arrays.stream(keyGenerator.getKwSubkeys()).mapToObj(EncryptionUtil::longToByteArray).toArray(byte[][]::new);
+        this.roundKeys = keyGenerator.generate(key);
+        this.klSubkeys = keyGenerator.getKlSubkeys();
+        this.kwSubkeys = keyGenerator.getKwSubkeys();
     }
 
     @Override
@@ -91,67 +93,27 @@ public class CamelliaEncryption extends FeistelCipher {
         return DATA_LENGTH_BYTES;
     }
 
-    private void xor16byteWithTwo8byte(byte[] byte16, byte[] left8byte, byte[] right8byte) {
-        if (byte16.length != 16 || left8byte.length != 8 || right8byte.length != 8) {
-            throw new IllegalArgumentException();
-        }
-
-        for (int x = 0; x < 8; x++) {
-            byte16[x] ^= left8byte[0];
-        }
-        for (int x = 8; x < 16; x++) {
-            byte16[x] ^= right8byte[x - 8];
-        }
+    private long FL(long data, long subkey) {
+        int x1 = (int) (data >>> 32);
+        int x2 = (int) (data & 0xFFFFFFFFL);
+        int k1 = (int) (subkey >>> 32);
+        int k2 = (int) (subkey & 0xFFFFFFFFL);
+        x2 = x2 ^ (oneCycleShift((x1 & k1)));
+        x1 = x1 ^ (x2 | k2);
+        return ((long) x1 << 32) | (long) x2 & 0xFFFFFFFFL;
     }
 
-    private void swap8byteBlocks(byte[] toSwap) {
-        if (toSwap.length != 16) {
-            throw new IllegalArgumentException();
-        }
-        var tmp = Arrays.copyOf(toSwap, 8);
-        System.arraycopy(toSwap, 8, toSwap, 0, 8);
-        System.arraycopy(tmp, 0, toSwap, 8, 8);
+    private long FLInv(long data, long subkey) {
+        int y1 = (int) (data >>> 32);
+        int y2 = (int) (data & 0xFFFFFFFFL);
+        int k1 = (int) (subkey >>> 32);
+        int k2 = (int) (subkey & 0xFFFFFFFFL);
+        y1 = y1 ^ (y2 | k2);
+        y2 = y2 ^ (oneCycleShift((y1 & k1)));
+        return ((long) y1 << 32) | (long) y2 & 0xFFFFFFFFL;
     }
 
-    private byte[] FL(byte[] data, byte[] kl) {
-        if (data.length != 8 || kl.length != 8) {
-            throw new IllegalArgumentException();
-        }
-        var result = new byte[8];
-        // xor and shift
-        for (int x = 0; x < 4; x++) {
-            result[x + 3] = (byte) (data[x] ^ kl[x]);
-        }
-        result[7] = result[3];
-        // xor with right part
-        for (int x = 4; x < 8; x++) {
-            result[x] = (byte) (result[x] ^ data[x]);
-        }
-        // or and xor
-        for (int x = 0; x < 4; x++) {
-            result[x] = (byte) ((result[x + 4] | kl[x + 4]) ^ data[x]);
-        }
-        return result;
-    }
-
-    private byte[] FLInv(byte[] data, byte[] kl) {
-        if (data.length != 8 || kl.length != 8) {
-            throw new IllegalArgumentException();
-        }
-        var result = new byte[8];
-        // or and xor
-        for (int x = 0; x < 4; x++) {
-            result[x] = (byte) ((data[x + 4] | kl[x + 4]) ^ data[x]);
-        }
-        // xor and shift
-        for (int x = 1; x < 4; x++) {
-            result[x + 3] = (byte) (result[x] ^ kl[x]);
-        }
-        result[7] = (byte) (result[0] ^ kl[0]);
-        // xor with right part
-        for (int x = 4; x < 8; x++) {
-            result[x] = (byte) (result[x] ^ data[x]);
-        }
-        return result;
+    private int oneCycleShift(int value) {
+        return ((value << 1) | (value >>> 31));
     }
 }

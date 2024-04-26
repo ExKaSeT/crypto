@@ -19,7 +19,7 @@ public class SymmetricEncryptor implements AutoCloseable {
     private final SymmetricEncryption encryption;
     private final Mode mode;
     private final Padding padding;
-    private byte[] initialVector;
+    private final byte[] initialVector;
     private final ExecutorService threadPool;
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding, byte[] initialVector) {
@@ -30,13 +30,12 @@ public class SymmetricEncryptor implements AutoCloseable {
         }
         this.mode = mode;
         this.padding = padding;
-        this.initialVector = initialVector;
+        this.initialVector = initialVector.clone();
         this.threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 
     public SymmetricEncryptor(SymmetricEncryption encryption, Mode mode, Padding padding) {
-        this(encryption, mode, padding, null);
-        initialVector = this.generateInitVector(encryption.getBlockLenBytes());
+        this(encryption, mode, padding, generateInitVector(encryption.getBlockLenBytes()));
     }
 
     public byte[] encrypt(byte[] data) {
@@ -160,7 +159,7 @@ public class SymmetricEncryptor implements AutoCloseable {
         return file;
     }
 
-    private byte[] generateInitVector(int lengthBytes) {
+    private static byte[] generateInitVector(int lengthBytes) {
         SecureRandom random = new SecureRandom();
         var result = new byte[lengthBytes];
         random.nextBytes(result);
