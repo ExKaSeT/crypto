@@ -9,6 +9,9 @@ public class RC5_64Encryption implements SymmetricEncryption {
     private static final int DATA_LENGTH_BYTES = 16;
 
     public RC5_64Encryption(int roundCount) {
+        if (roundCount < 1 || roundCount > 255) {
+            throw new IllegalArgumentException("Round count must be 1-255");
+        }
         this.roundCount = roundCount;
     }
 
@@ -55,6 +58,10 @@ public class RC5_64Encryption implements SymmetricEncryption {
 
     @Override
     public void generateRoundKeys(byte[] key) {
+        if (key.length < 1 || key.length > 255) {
+            throw new IllegalArgumentException("Key length must be 1-255 bytes");
+        }
+
         long[] L = new long[(key.length + (8 - 1)) / 8];
 
         for (int i = 0; i != key.length; i++) {
