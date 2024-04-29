@@ -1,5 +1,8 @@
 package org.example.encryption.assymetric;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -16,6 +19,8 @@ public class DiffieHellmanEncryption {
     private static final BigInteger MIN_SECRET_VALUE = BigInteger.valueOf(666L);
     private static final Random random = new SecureRandom();
 
+    @Getter
+    @Setter
     private BigInteger secret;
 
     public BigInteger generateSecretAndOpenKey() {
