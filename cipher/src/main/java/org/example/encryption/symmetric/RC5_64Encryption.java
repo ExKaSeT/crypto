@@ -20,14 +20,13 @@ public class RC5_64Encryption implements SymmetricEncryption {
         long A = bytesToWord(data, 0) + S[0];
         long B = bytesToWord(data, 8) + S[1];
 
-        for (int i = 1; i <= roundCount; i++)
-        {
-            A = rotateLeft(A ^ B, B) + S[2*i];
-            B = rotateLeft(B ^ A, A) + S[2*i+1];
+        for (int i = 1; i <= roundCount; i++) {
+            A = rotateLeft(A ^ B, B) + S[2 * i];
+            B = rotateLeft(B ^ A, A) + S[2 * i + 1];
         }
 
         var result = new byte[DATA_LENGTH_BYTES];
-        
+
         wordToBytes(A, result, 0);
         wordToBytes(B, result, 8);
         return result;
@@ -42,14 +41,13 @@ public class RC5_64Encryption implements SymmetricEncryption {
         long A = bytesToWord(data, 0);
         long B = bytesToWord(data, 8);
 
-        for (int i = roundCount; i >= 1; i--)
-        {
-            B = rotateRight(B - S[2*i+1], A) ^ A;
-            A = rotateRight(A - S[2*i],   B) ^ B;
+        for (int i = roundCount; i >= 1; i--) {
+            B = rotateRight(B - S[2 * i + 1], A) ^ A;
+            A = rotateRight(A - S[2 * i], B) ^ B;
         }
 
         var result = new byte[DATA_LENGTH_BYTES];
-        
+
         wordToBytes(A - S[0], result, 0);
         wordToBytes(B - S[1], result, 8);
 

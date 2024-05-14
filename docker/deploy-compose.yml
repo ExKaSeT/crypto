@@ -1,0 +1,96 @@
+version: "3.9"
+name: server-client-deploy
+services:
+  postgres:
+    image: postgres:15.5
+    container_name: postgres
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_SERVER_ID: 1
+    ports:
+      - "2181:2181"
+
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:19092,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092,DOCKER://host.docker.internal:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_BROKER_ID: 1
+    depends_on:
+      - zookeeper
+
+  kafka-2:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9093:9093"
+      - "29093:29093"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:19093,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9093,DOCKER://host.docker.internal:29093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_BROKER_ID: 2
+    depends_on:
+      - zookeeper
+
+  kafka-3:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9094:9094"
+      - "29094:29094"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:19094,EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9094,DOCKER://host.docker.internal:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_MIN_INSYNC_REPLICAS: 2
+      KAFKA_BROKER_ID: 3
+    depends_on:
+      - zookeeper
+
+  server:
+    image: server:1.0
+    entrypoint: ["java", "-jar", "/app/server.jar"]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - zookeeper
+    environment:
+      - APP_SECURITY_JWT_SECRET_KEY=55e4c0251ac3f4a8497d719e4e81e13d8ae58a6e8878aac7f62a65fe92d66ba6
+      - APP_SECURITY_JWT_REFRESH_TOKEN_EXPIRATION_MIN=4320
+      - APP_SECURITY_JWT_ACCESS_TOKEN_EXPIRATION_MIN=5
+      - APP_SECURITY_JWT_COOKIE_HTTPS_ONLY=false
+      - SCHEDULER_ENABLED=true
+      - SCHEDULER_DELETEEXPIREDTOKENSCRON=0 0 * * * ?
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-1:29092,kafka-2:29093,kafka-3:29094
+      - SPRING_CLOUD_ZOOKEEPER_CONNECT_STRING=zookeeper:2181
+
+volumes:
+  pg-data:

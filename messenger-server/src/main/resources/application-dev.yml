@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: postgres
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  messages:
+    basename: i18n/messages
+
+app:
+  security:
+    jwt:
+      secret-key: 55e4c0251ac3f4a8497d719e4e81e13d8ae58a6e8878aac7f62a65fe92d66ba6
+      refresh-token-expiration-min: 4320
+      access-token-expiration-min: 5
+      cookie-https-only: false
+
+scheduler:
+  enabled: true
+  deleteExpiredTokensCron: "0 0 * * * ?"

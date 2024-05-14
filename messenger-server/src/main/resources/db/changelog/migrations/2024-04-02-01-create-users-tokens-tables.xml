@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="2024-03-06-create-users-tokens-tables" author="admin">
+        <createTable tableName="users">
+            <column name="username" type="VARCHAR(30)">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="password" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="role" type="VARCHAR(50)">
+            </column>
+            <column name="is_banned" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createSequence sequenceName="refresh_tokens_seq"/>
+        <createTable tableName="refresh_tokens">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="valid_until_utc0" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="was_used" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_username" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="refresh_tokens"
+                                 baseColumnNames="user_username"
+                                 constraintName="fk_refresh_tokens_user_username"
+                                 referencedTableName="users"
+                                 referencedColumnNames="username"/>
+
+        <createIndex tableName="refresh_tokens" indexName="idx_refresh_tokens_user_username">
+            <column name="user_username"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
