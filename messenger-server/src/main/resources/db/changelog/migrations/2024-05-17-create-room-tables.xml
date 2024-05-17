@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="2024-05-17-create-room-tables" author="admin">
+        <createSequence sequenceName="rooms_seq"/>
+        <createTable tableName="rooms">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true"/>
+            </column>
+            <column name="last_message_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createSequence sequenceName="rooms_users_seq"/>
+        <createTable tableName="rooms_users">
+            <column name="room_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_username" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_agreed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message_offset" type="BIGINT"/>
+        </createTable>
+
+        <addPrimaryKey constraintName="pk_rooms_users" columnNames="room_id, user_username" tableName="rooms_users"/>
+
+        <addForeignKeyConstraint baseTableName="rooms_users"
+                                 baseColumnNames="room_id"
+                                 constraintName="fk_rooms_users_room_id"
+                                 referencedTableName="rooms"
+                                 referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint baseTableName="rooms_users"
+                                 baseColumnNames="user_username"
+                                 constraintName="fk_rooms_users_user_username"
+                                 referencedTableName="users"
+                                 referencedColumnNames="username"/>
+
+        <createIndex tableName="rooms_users" indexName="idx_rooms_users_room_id">
+            <column name="room_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

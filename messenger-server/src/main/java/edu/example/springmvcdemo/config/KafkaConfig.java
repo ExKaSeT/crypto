@@ -21,7 +21,8 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConfig {
-    public static final String IMAGES_WIP_TOPIC_NAME = "messages";
+    public static final String MESSAGES_TOPIC_NAME = "messages";
+    public static final int MESSAGES_PARTITION_COUNT = 3;
     // retries count on not fatal errors
     private static final int CONSUMER_RETRIES_COUNT = 3;
     private static final long CONSUMER_RETRIES_INTERVAL_MS = 100L;
@@ -29,8 +30,8 @@ public class KafkaConfig {
     private final KafkaProperties properties;
 
     @Bean
-    public NewTopic imagesWipTopic() {
-        return new NewTopic(IMAGES_WIP_TOPIC_NAME, 3, (short) 2);
+    public NewTopic messagesTopic() {
+        return new NewTopic(MESSAGES_TOPIC_NAME, MESSAGES_PARTITION_COUNT, (short) 2);
     }
 
     @Bean
@@ -45,7 +46,7 @@ public class KafkaConfig {
         var factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(CONSUMER_RETRIES_INTERVAL_MS, CONSUMER_RETRIES_COUNT)));
-        factory.setConcurrency(2);
+        factory.setConcurrency(1);
         factory.setRecordMessageConverter(converter);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
         return factory;

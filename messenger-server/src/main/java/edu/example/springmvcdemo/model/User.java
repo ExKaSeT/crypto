@@ -28,4 +28,9 @@ public class User {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<RefreshToken> refreshTokens;
+
+    @OneToMany(mappedBy = "user", orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<RoomUser> roomUsers;
 }
