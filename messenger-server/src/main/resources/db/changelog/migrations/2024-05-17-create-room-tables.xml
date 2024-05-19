@@ -13,9 +13,6 @@
             <column name="last_message_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="is_deleted" type="BOOLEAN" defaultValueBoolean="false">
-                <constraints nullable="false"/>
-            </column>
         </createTable>
 
         <createTable tableName="rooms_users">

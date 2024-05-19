@@ -16,9 +16,6 @@ public class Room {
     @Column(nullable = false, name = "last_message_id")
     private Long lastMessageId;
 
-    @Column(nullable = false, name = "is_deleted")
-    private boolean isDeleted;
-
     @OneToMany(mappedBy = "room", orphanRemoval = true)
     private List<RoomUser> roomUsers;
 }

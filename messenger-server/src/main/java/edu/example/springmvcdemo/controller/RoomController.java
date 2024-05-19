@@ -40,6 +40,6 @@ public class RoomController {
 
     @GetMapping("/available")
     public List<UserRoomDto> getUserRooms(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        return roomService.getAllUserRooms(userDetails.getUser());
+        return roomService.getAllUserRoomDtos(userDetails.getUser());
     }
 }

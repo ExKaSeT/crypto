@@ -5,6 +5,7 @@ import edu.example.springmvcdemo.dto.message.SendMessageResponseDto;
 import edu.example.springmvcdemo.dto.messages_kafka.MessageDto;
 import edu.example.springmvcdemo.dto.message.MessageResponseDto;
 import edu.example.springmvcdemo.mapper.MessageMapper;
+import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.model.User;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -15,9 +16,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.stereotype.Service;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -75,22 +74,26 @@ public class MessagingService {
             consumer.assign(Collections.singletonList(topicPartition));
             consumer.seek(topicPartition, offset);
 
-            boolean keepOnReading = true;
+            Set<Long> userRoomIds = new HashSet<>(roomService.getAllUserRooms(user)
+                    .stream().map(Room::getId).toList());
 
-            while (keepOnReading) {
+            while (true) {
                 ConsumerRecords<Object, byte[]> records = consumer.poll(Duration.ofMillis(100));
                 if (records.isEmpty()) {
-                    keepOnReading = false;
-                } else {
-                    for (ConsumerRecord<Object, byte[]> record : records) {
-                        lastOffset = record.offset();
-                        var messageInfo = (MessageDto) converter.toMessage(record, null, null, MessageDto.class).getPayload();
-                        if (!messageInfo.getReceiverUsername().equals(user.getUsername())) {
-                            continue;
-                        }
-                        response.add(messageMapper
-                                .messageDtoToMessageResponseDto(messageInfo, record.timestamp()));
+                    break;
+                }
+                for (ConsumerRecord<Object, byte[]> record : records) {
+                    lastOffset = record.offset();
+                    var messageInfo = (MessageDto) converter.toMessage(record, null,
+                            null, MessageDto.class).getPayload();
+                    if (!messageInfo.getReceiverUsername().equals(user.getUsername())) {
+                        continue;
                     }
+                    if (!userRoomIds.contains(messageInfo.getRoomId())) {
+                        continue;
+                    }
+                    response.add(messageMapper
+                            .messageDtoToMessageResponseDto(messageInfo, record.timestamp()));
                 }
             }
         }

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,6 @@ public class RoomService {
     @Transactional
     public Room createRoom(User creator, User participant) {
         var room = new Room();
-        room.setDeleted(false);
         room.setLastMessageId(0L);
         room = roomRepository.save(room);
 
@@ -74,10 +74,10 @@ public class RoomService {
         return roomUserRepository.getAllByRoomId(roomId);
     }
 
-    public List<UserRoomDto> getAllUserRooms(User user) {
-        var userRoomsNotDeleted = roomUserRepository.getAllByUserAndRoomIsDeleted(user, false);
+    public List<UserRoomDto> getAllUserRoomDtos(User user) {
+        var userRooms = roomUserRepository.getAllByUser(user);
         var result = new ArrayList<UserRoomDto>();
-        for (var userRoom : userRoomsNotDeleted) {
+        for (var userRoom : userRooms) {
             var participant = userRoom.getRoom().getRoomUsers()
                     .stream().filter(roomUser -> !roomUser.equals(userRoom)).findFirst().get();
             var dto = new UserRoomDto(userRoom.getRoom().getId(), userRoom.isAgreed(),
@@ -85,5 +85,9 @@ public class RoomService {
             result.add(dto);
         }
         return result;
+    }
+
+    public List<Room> getAllUserRooms(User user) {
+        return roomUserRepository.getAllByUser(user).stream().map(RoomUser::getRoom).collect(Collectors.toList());
     }
 }
