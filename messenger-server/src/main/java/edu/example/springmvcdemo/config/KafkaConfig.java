@@ -68,7 +68,7 @@ public class KafkaConfig {
         return new DefaultKafkaProducerFactory<>(props);
     }
 
-    private ConsumerFactory<Object, Object> consumerFactory() {
+    public ConsumerFactory<Object, Object> consumerFactory() {
         var props = properties.buildProducerProperties(null);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "${app.group-id}");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
@@ -78,6 +78,7 @@ public class KafkaConfig {
         props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, "500");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10");
         return new DefaultKafkaConsumerFactory<>(props);
     }
 }

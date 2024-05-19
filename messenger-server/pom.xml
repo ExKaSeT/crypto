@@ -9,7 +9,7 @@
     </parent>
     <groupId>edu.example</groupId>
     <artifactId>messenger-server</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>messenger-server</name>
     <properties>
         <java.version>17</java.version>

@@ -2,19 +2,18 @@ package edu.example.springmvcdemo.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "rooms_users")
 @Data
+@NoArgsConstructor
 public class RoomUser {
     @EmbeddedId
-    private RoomUserId id;
+    private RoomUserId id = new RoomUserId();
 
     @Column(nullable = false, name = "is_agreed")
     private boolean isAgreed;
-
-    @Column(name = "message_offset")
-    private Long messageOffset;
 
     @ManyToOne
     @MapsId("roomId")

@@ -9,4 +9,5 @@ public class MessageDto {
     private Long roomId;
     private Long messageId;
     private String receiverUsername;
+    private byte[] data;
 }

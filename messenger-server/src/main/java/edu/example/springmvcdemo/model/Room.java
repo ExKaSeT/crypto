@@ -19,6 +19,6 @@ public class Room {
     @Column(nullable = false, name = "is_deleted")
     private boolean isDeleted;
 
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "room", orphanRemoval = true)
     private List<RoomUser> roomUsers;
 }

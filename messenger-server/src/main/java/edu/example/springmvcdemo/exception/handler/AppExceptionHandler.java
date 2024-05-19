@@ -4,6 +4,7 @@ import edu.example.springmvcdemo.dto.SuccessContainerDto;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
 import edu.example.springmvcdemo.security.exception.InvalidTokenException;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,10 +13,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import static org.springframework.http.HttpStatus.*;
 
+@Slf4j
 @RestControllerAdvice
 public class AppExceptionHandler {
 
@@ -47,6 +51,7 @@ public class AppExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleExceptions(Exception e) {
+        log.warn(e.getMessage());
         return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(new SuccessContainerDto(false, null));
     }
 }

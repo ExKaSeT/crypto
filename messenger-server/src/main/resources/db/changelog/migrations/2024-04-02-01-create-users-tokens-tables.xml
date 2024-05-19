@@ -17,6 +17,7 @@
             <column name="is_banned" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>
+            <column name="message_offset" type="BIGINT"/>
         </createTable>
 
         <createSequence sequenceName="refresh_tokens_seq"/>

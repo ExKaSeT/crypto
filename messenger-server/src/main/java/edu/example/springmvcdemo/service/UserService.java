@@ -32,4 +32,10 @@ public class UserService {
     public boolean isUserExist(String username) {
         return userRepository.existsByUsername(username);
     }
+
+    public void setMessageOffset(String username, long offset) {
+        var user = getUserByUsername(username);
+        user.setMessageOffset(offset);
+        userRepository.save(user);
+    }
 }

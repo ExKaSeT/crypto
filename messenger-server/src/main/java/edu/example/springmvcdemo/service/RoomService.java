@@ -2,6 +2,7 @@ package edu.example.springmvcdemo.service;
 
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dao.RoomUserRepository;
+import edu.example.springmvcdemo.dto.room.UserRoomDto;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
 import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.model.RoomUser;
@@ -11,6 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,24 +28,26 @@ public class RoomService {
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
     }
 
+    @Transactional
     public Room createRoom(User creator, User participant) {
         var room = new Room();
         room.setDeleted(false);
         room.setLastMessageId(0L);
+        room = roomRepository.save(room);
 
         var creatorInfo = new RoomUser();
         creatorInfo.setRoom(room);
         creatorInfo.setUser(creator);
-        creatorInfo.setMessageOffset(0L);
         creatorInfo.setAgreed(true);
+        roomUserRepository.save(creatorInfo);
 
         var participantInfo = new RoomUser();
         participantInfo.setRoom(room);
         participantInfo.setUser(participant);
-        participantInfo.setMessageOffset(0L);
         participantInfo.setAgreed(false);
+        roomUserRepository.save(participantInfo);
 
-        return roomRepository.save(room);
+        return room;
     }
 
     public void setUserAgreedStatus(User user, long roomId, boolean agreed) {
@@ -62,5 +68,22 @@ public class RoomService {
         room.setLastMessageId(messageId);
         roomRepository.save(room);
         return messageId;
+    }
+
+    public List<RoomUser> getRoomUsers(long roomId) {
+        return roomUserRepository.getAllByRoomId(roomId);
+    }
+
+    public List<UserRoomDto> getAllUserRooms(User user) {
+        var userRoomsNotDeleted = roomUserRepository.getAllByUserAndRoomIsDeleted(user, false);
+        var result = new ArrayList<UserRoomDto>();
+        for (var userRoom : userRoomsNotDeleted) {
+            var participant = userRoom.getRoom().getRoomUsers()
+                    .stream().filter(roomUser -> !roomUser.equals(userRoom)).findFirst().get();
+            var dto = new UserRoomDto(userRoom.getRoom().getId(), userRoom.isAgreed(),
+                    participant.getUser().getUsername(), participant.isAgreed());
+            result.add(dto);
+        }
+        return result;
     }
 }

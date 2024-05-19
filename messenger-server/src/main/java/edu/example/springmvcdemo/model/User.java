@@ -33,4 +33,7 @@ public class User {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<RoomUser> roomUsers;
+
+    @Column(name = "message_offset")
+    private Long messageOffset;
 }
