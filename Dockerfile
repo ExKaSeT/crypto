@@ -6,5 +6,6 @@ RUN mvn -f /app/pom.xml clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=builder /app/messenger-server/target/messenger-server-1.0-SNAPSHOT.jar /app/server.jar
+COPY --from=builder /app/messenger-client/target/messenger-client-1.0-SNAPSHOT.jar /app/client.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/server.jar"]

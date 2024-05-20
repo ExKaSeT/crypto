@@ -1,0 +1,16 @@
+version: "3.9"
+name: dev-env-for-client
+services:
+  postgres-client:
+    image: postgres:15.5
+    container_name: postgres-client
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-client-data:/var/lib/postgresql/data
+
+volumes:
+  pg-client-data:

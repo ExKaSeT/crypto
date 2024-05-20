@@ -1,0 +1,69 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="header :: headerFragment">
+</head>
+<body>
+<div class="includeBaseBody" th:replace="header :: bodyFragment"></div>
+
+<div class="row mt-5">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h2>Регистрация</h2>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/register}" th:object="${registerDto}" method="post">
+                    <div class="form-group">
+                        <label for="username">Логин:</label>
+                        <input type="text" id="username" name="username" th:field="*{username}" class="form-control" required/>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Пароль:</label>
+                        <input type="password" id="password" name="password" th:field="*{password}" class="form-control" required/>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Повторите пароль:</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" required/>
+                        <small id="passwordMatchMessage"></small>
+                    </div>
+                    <button type="submit" id="submitBtn" class="btn btn-primary invisible">Зарегистрироваться</button>
+                    <div th:if="${#fields.hasAnyErrors()}">
+                        <ul>
+                            <li th:each="err : ${#fields.allErrors()}" th:if="${not #strings.isEmpty(err)}" th:text="${err}" />
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <p>Уже есть аккаунт? <a th:href="@{/login}">Войдите здесь</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var passwordInput = document.getElementById('password');
+        var confirmPasswordInput = document.getElementById('confirmPassword');
+        var message = document.getElementById('passwordMatchMessage');
+        var button = document.getElementById('submitBtn');
+        function checkPasswordMatch() {
+            var password = passwordInput.value;
+            var confirmPassword = confirmPasswordInput.value;
+            if (password === confirmPassword) {
+                message.textContent = 'Passwords match';
+                message.style.color = 'green';
+                button.classList.remove('invisible');
+            } else {
+                message.textContent = 'Passwords do not match';
+                message.style.color = 'red';
+                button.classList.add('invisible');
+            }
+        }
+        passwordInput.addEventListener('input', checkPasswordMatch);
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+    });
+</script>
+</body>
+</html>

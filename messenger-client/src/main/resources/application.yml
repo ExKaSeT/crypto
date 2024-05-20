@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  messages:
+    basename: i18n/messages
+
+  #liquibase
+  liquibase.change-log: classpath:/db/changelog/db-changelog.xml
+
+server.port: 8081
+
+remote-server.url: http://localhost:8080

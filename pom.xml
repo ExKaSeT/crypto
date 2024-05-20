@@ -18,6 +18,7 @@
     <modules>
         <module>cipher</module>
         <module>messenger-server</module>
+        <module>messenger-client</module>
     </modules>
 
     <properties>
