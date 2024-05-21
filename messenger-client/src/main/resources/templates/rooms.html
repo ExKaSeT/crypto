@@ -39,7 +39,7 @@
     <ul class="nav nav-tabs mt-3" id="roomTabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active" id="created-tab" data-toggle="tab" href="#created" role="tab"
-               aria-controls="created" aria-selected="true">Запрошено создание</a>
+               aria-controls="created" aria-selected="true">Отправленные запросы</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="toAgree-tab" data-toggle="tab" href="#toAgree" role="tab"
@@ -52,12 +52,14 @@
     </ul>
     <div class="tab-content" id="roomTabsContent">
         <div class="tab-pane fade show active" id="created" role="tabpanel" aria-labelledby="created-tab">
-            <h3 class="mt-3">Запрошено создание</h3>
+            <h3 class="mt-3">Отправленные запросы</h3>
             <div class="room-list">
                 <div class="card room-card" th:each="room : ${createdRooms}">
                     <div class="card-body">
                         <h5 class="card-title"><span
                                 th:text="'[ ' + ${room.roomId} + ' ] ' + ${room.participantUsername}"></span></h5>
+                        <h5 class="card-text" th:if="${room.encryptionInfo != null}"><span
+                                th:text="'Шифрование: ' + ${room.encryptionInfo}"></span></h5>
                         <button class="btn btn-danger btn-sm" th:onclick="'deleteRoom(' + ${room.roomId} + ')'">
                             Удалить
                         </button>
@@ -89,6 +91,8 @@
                         <a th:href="@{/rooms/{roomId}(roomId=${room.roomId})}" class="unstyled-link">
                             <h5 class="card-title"><span
                                     th:text="'[ ' + ${room.roomId} + ' ] ' + ${room.participantUsername}"></span></h5>
+                            <h5 class="card-text" th:if="${room.encryptionInfo != null}"><span
+                                    th:text="'Шифрование: ' + ${room.encryptionInfo}"></span></h5>
                         </a>
                         <button class="btn btn-danger btn-sm" th:onclick="'deleteRoom(' + ${room.roomId} + ')'">
                             Удалить

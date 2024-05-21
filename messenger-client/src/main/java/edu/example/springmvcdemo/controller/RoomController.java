@@ -3,9 +3,9 @@ package edu.example.springmvcdemo.controller;
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
 import edu.example.springmvcdemo.dto.encryption.RC5WordLengthBytes;
+import edu.example.springmvcdemo.dto.room.RoomDto;
 import edu.example.springmvcdemo.dto.room.RoomForm;
 import edu.example.springmvcdemo.model.EncryptionType;
-import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.model.RoomStatus;
 import edu.example.springmvcdemo.security.UserDetailsImpl;
 import edu.example.springmvcdemo.service.RoomService;
@@ -39,9 +39,12 @@ public class RoomController {
 
     @GetMapping
     public String getRooms(Model model, @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        List<Room> createdRooms = roomRepository.getRoomsByStatus(RoomStatus.CREATED);
-        List<Room> toAgreeRooms = roomRepository.getRoomsByStatus(RoomStatus.TO_AGREE);
-        List<Room> agreedRooms = roomRepository.getRoomsByStatus(RoomStatus.AGREED);
+        var createdRooms = roomRepository.getRoomsByStatus(RoomStatus.CREATED)
+                .stream().map(RoomDto::fromRoom).toList();
+        var toAgreeRooms = roomRepository.getRoomsByStatus(RoomStatus.TO_AGREE)
+                .stream().map(RoomDto::fromRoom).toList();
+        var agreedRooms = roomRepository.getRoomsByStatus(RoomStatus.AGREED)
+                .stream().map(RoomDto::fromRoom).toList();
 
         model.addAttribute("username", userDetails.getUser().getUsername());
         model.addAttribute("createdRooms", createdRooms);

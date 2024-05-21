@@ -13,6 +13,4 @@ spring:
   #liquibase
   liquibase.change-log: classpath:/db/changelog/db-changelog.xml
 
-server.port: 8081
-
 remote-server.url: http://localhost:8080

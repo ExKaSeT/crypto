@@ -20,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static java.lang.Math.abs;
 import static java.util.Objects.isNull;
 
 @Service
@@ -34,7 +36,7 @@ public class MessagingService {
     private final RecordMessageConverter converter;
 
     public static int getPartitionNumber(String username) {
-        return username.hashCode() % KafkaConfig.MESSAGES_PARTITION_COUNT;
+        return abs(username.hashCode() % KafkaConfig.MESSAGES_PARTITION_COUNT);
     }
 
     public SendMessageResponseDto sendMessage(User sender, Long roomId, byte[] data) {
@@ -69,6 +71,7 @@ public class MessagingService {
         long offset = isNull(user.getMessageOffset()) ? 0 : user.getMessageOffset();
         var response = new ArrayList<MessageResponseDto>();
         long lastOffset = offset;
+        boolean pullAnyObject = false;
         try (var consumer = new KafkaConsumer<Object, byte[]>(kafkaConfig.consumerFactory().getConfigurationProperties())) {
             TopicPartition topicPartition = new TopicPartition(KafkaConfig.MESSAGES_TOPIC_NAME, partition);
             consumer.assign(Collections.singletonList(topicPartition));
@@ -82,6 +85,7 @@ public class MessagingService {
                 if (records.isEmpty()) {
                     break;
                 }
+                pullAnyObject = true;
                 for (ConsumerRecord<Object, byte[]> record : records) {
                     lastOffset = record.offset();
                     var messageInfo = (MessageDto) converter.toMessage(record, null,
@@ -98,7 +102,7 @@ public class MessagingService {
             }
         }
 
-        userService.setMessageOffset(user.getUsername(), lastOffset + 1);
+        userService.setMessageOffset(user.getUsername(),  pullAnyObject ? lastOffset + 1 : lastOffset);
         return response;
     }
 }

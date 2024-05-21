@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.isNull;
@@ -81,12 +82,11 @@ public class MessageService {
             try {
                 var payload = SerializationUtils.deserialize(message.getData());
                 var room = roomRepository.findById(message.getRoomId()).orElse(null);
-                if (payload instanceof OpenKeyExchangeDto) {
+                if (payload instanceof OpenKeyExchangeDto openKeyDto) {
                     if (isNull(room)) {
                         log.info("Message ignored. Room not exists: " + message);
                         continue;
                     }
-                    var openKeyDto = (OpenKeyExchangeDto) payload;
                     var openKey = new BigInteger(openKeyDto.getOpenKey());
                     var encryption = new DiffieHellmanEncryption();
 
@@ -113,7 +113,7 @@ public class MessageService {
                 }
 
             } catch (Exception ex) {
-                log.error("Can't process message: " + message + ex.getMessage());
+                log.error("Can't process message: " + message + "\n" + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
             }
         }
     }

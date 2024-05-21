@@ -1,16 +1,15 @@
 version: "3.9"
 name: server-client-deploy
 services:
-  postgres:
+  postgres-server:
     image: postgres:15.5
-    container_name: postgres
     environment:
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
     ports:
       - "5432:5432"
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pg-server-data:/var/lib/postgresql/data
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -66,7 +65,7 @@ services:
       - zookeeper
 
   server:
-    image: server:1.0
+    image: messenger:1.0
     entrypoint: ["java", "-jar", "/app/server.jar"]
     build:
       context: ..
@@ -74,7 +73,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      - postgres-server
       - zookeeper
     environment:
       - APP_SECURITY_JWT_SECRET_KEY=55e4c0251ac3f4a8497d719e4e81e13d8ae58a6e8878aac7f62a65fe92d66ba6
@@ -83,7 +82,7 @@ services:
       - APP_SECURITY_JWT_COOKIE_HTTPS_ONLY=false
       - SCHEDULER_ENABLED=true
       - SCHEDULER_DELETEEXPIREDTOKENSCRON=0 0 * * * ?
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres/postgres
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-server/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_JPA_SHOW_SQL=true
@@ -92,5 +91,67 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka-1:29092,kafka-2:29093,kafka-3:29094
       - SPRING_CLOUD_ZOOKEEPER_CONNECT_STRING=zookeeper:2181
 
+  postgres-client1:
+    image: postgres:15.5
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-client1-data:/var/lib/postgresql/data
+
+  client1:
+    image: messenger:1.0
+    entrypoint: [ "java", "-jar", "/app/client.jar" ]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres-client1
+      - server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-client1/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - REMOTE_SERVER_URL=http://server:8080
+
+  postgres-client2:
+    image: postgres:15.5
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg-client1-data:/var/lib/postgresql/data
+
+  client2:
+    image: messenger:1.0
+    entrypoint: [ "java", "-jar", "/app/client.jar" ]
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8080"
+    depends_on:
+      - postgres-client2
+      - server
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-client2/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_SHOW_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - REMOTE_SERVER_URL=http://server:8080
+
 volumes:
-  pg-data:
+  pg-server-data:
+  pg-client1-data:
+  pg-client2-data:
