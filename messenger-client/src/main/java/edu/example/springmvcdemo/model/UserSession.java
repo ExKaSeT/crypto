@@ -12,6 +12,6 @@ public class UserSession {
     @Column(nullable = false, length = 30, name = "username")
     private String username;
 
-    @Column(nullable = false, name = "refresh_token")
+    @Column(name = "refresh_token")
     private String refreshToken;
 }

@@ -1,4 +1,4 @@
-package edu.example.springmvcdemo.dto.rest_responses.auth;
+package edu.example.springmvcdemo.dto.rest_dto.auth;
 
 import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;

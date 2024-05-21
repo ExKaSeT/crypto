@@ -1,6 +1,5 @@
 package edu.example.springmvcdemo.security.config;
 
-import edu.example.springmvcdemo.dao.UserSessionRepository;
 import edu.example.springmvcdemo.security.filter.CheckAlreadyAuthenticatedFilter;
 import edu.example.springmvcdemo.security.provider.ClientAuthenticationProvider;
 import edu.example.springmvcdemo.service.UserSessionService;
@@ -24,7 +23,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            LogoutSuccessHandler logoutHandler,
-                                           UserSessionRepository userSessionRepository) throws Exception {
+                                           UserSessionService userSessionService) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers( "/login", "/register", "/static/public/**").permitAll()
@@ -32,14 +31,14 @@ public class SecurityConfig {
                 )
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
-                .addFilterBefore(new CheckAlreadyAuthenticatedFilter(userSessionRepository),
+                .addFilterBefore(new CheckAlreadyAuthenticatedFilter(userSessionService),
                         UsernamePasswordAuthenticationFilter.class)
                 .formLogin(formLogin -> {
                     formLogin
                             .usernameParameter("username")
                             .passwordParameter("password")
                             .loginPage("/login")
-                            .defaultSuccessUrl("/");
+                            .defaultSuccessUrl("/rooms");
                 })
                 .logout(logout -> logout
                         .logoutUrl("/logout")

@@ -4,10 +4,12 @@ import edu.example.springmvcdemo.config.RestClientConfig;
 import edu.example.springmvcdemo.dao.MessageRepository;
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dao.UserSessionRepository;
-import edu.example.springmvcdemo.dto.rest_responses.auth.LoginRequestDto;
+import edu.example.springmvcdemo.dto.rest_dto.auth.LoginRequestDto;
 import edu.example.springmvcdemo.model.UserSession;
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
@@ -18,9 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import static java.util.Objects.requireNonNull;
+
+import static java.util.Objects.*;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserSessionService {
 
@@ -41,13 +45,30 @@ public class UserSessionService {
         roomRepository.deleteAll();
     }
 
+    @Nullable
+    public UserSession getUser() {
+        var userList = userSessionRepository.findAll();
+        if (userList.isEmpty()) {
+            return null;
+        }
+        return userList.get(0);
+    }
+
+    public boolean isUserLoggedIn() {
+        var user = getUser();
+        if (isNull(user)) {
+            return false;
+        }
+        if (isNull(user.getRefreshToken()) || user.getRefreshToken().isBlank()) {
+            return false;
+        }
+        return true;
+    }
+
     public UserSession createUpdateSession(String accessToken, String refreshToken, String username) {
-        var currentUser = userSessionRepository.findAll();
-        UserSession user;
-        if (!currentUser.isEmpty()) {
-            if (currentUser.get(0).getUsername().equals(username)) {
-                user = currentUser.get(0);
-            } else {
+        UserSession user = getUser();
+        if (nonNull(user)) {
+            if (!user.getUsername().equals(username)) {
                 clearSession();
                 user = new UserSession();
             }
@@ -94,12 +115,12 @@ public class UserSessionService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public void updateTokens() {
-        var userList = userSessionRepository.findAll();
-        if (userList.isEmpty()) {
+    public void updateTokens() throws AuthenticationException {
+        if (!isUserLoggedIn()) {
             return;
         }
-        var user = userList.get(0);
+
+        var user = getUser();
 
         AtomicReference<String> accessToken = new AtomicReference<>();
         AtomicReference<String> refreshToken = new AtomicReference<>();
@@ -109,7 +130,14 @@ public class UserSessionService {
                 .header("Cookie", getCookieString(Map.of(REFRESH_COOKIE_NAME, user.getRefreshToken())))
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange((request, response) -> {
+                    if (response.getStatusCode().is4xxClientError()) {
+                        log.info("Refresh token rejected, need re-auth");
+                        user.setRefreshToken(null);
+                        userSessionRepository.save(user);
+                        throw new AuthenticationServiceException("Refresh token rejected, need re-auth");
+                    }
                     if (response.getStatusCode().isError()) {
+                        log.warn("Can't update tokens; code: " + response.getStatusCode());
                         throw new AuthenticationServiceException(response.getStatusText());
                     }
 
@@ -126,6 +154,10 @@ public class UserSessionService {
                 });
 
         createUpdateSession(accessToken.get(), refreshToken.get(), user.getUsername());
+    }
+
+    public String getAccessCookieString() {
+        return UserSessionService.getCookieString(Map.of(ACCESS_COOKIE_NAME, accessToken));
     }
 
     public static Map<String, String> parseCookie(List<String> cookieStrings) {

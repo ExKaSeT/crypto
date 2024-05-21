@@ -1,7 +1,7 @@
 package edu.example.springmvcdemo.security.filter;
 
-import edu.example.springmvcdemo.dao.UserSessionRepository;
 import edu.example.springmvcdemo.security.UserDetailsImpl;
+import edu.example.springmvcdemo.service.UserSessionService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+import static java.util.Objects.nonNull;
+
 // already have a record about user in db -> request authenticated
 @RequiredArgsConstructor
 public class CheckAlreadyAuthenticatedFilter extends OncePerRequestFilter {
@@ -26,22 +28,23 @@ public class CheckAlreadyAuthenticatedFilter extends OncePerRequestFilter {
     private SecurityContextHolderStrategy securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
     private SecurityContextRepository securityContextRepository = new RequestAttributeSecurityContextRepository();
 
-    private final UserSessionRepository userRepository;
+    private final UserSessionService userSessionService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        var userList = userRepository.findAll();
-        if (!userList.isEmpty()) {
-            var user = userList.get(0);
-            Authentication auth = new UsernamePasswordAuthenticationToken(new UserDetailsImpl(user),
-                    user.getUsername(), Collections.singleton(new SimpleGrantedAuthority("USER")));
-            SecurityContext context = this.securityContextHolderStrategy.createEmptyContext();
-            context.setAuthentication(auth);
-            securityContextHolderStrategy.setContext(context);
-            securityContextRepository.saveContext(context, request, response);
+        var user = userSessionService.getUser();
+        if (nonNull(user)) {
+            if (userSessionService.isUserLoggedIn()) {
+                Authentication auth = new UsernamePasswordAuthenticationToken(new UserDetailsImpl(user),
+                        user.getUsername(), Collections.singleton(new SimpleGrantedAuthority("USER")));
+                SecurityContext context = this.securityContextHolderStrategy.createEmptyContext();
+                context.setAuthentication(auth);
+                securityContextHolderStrategy.setContext(context);
+                securityContextRepository.saveContext(context, request, response);
+            }
         }
         filterChain.doFilter(request, response);
     }

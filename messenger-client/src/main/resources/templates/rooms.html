@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:include="header :: headerFragment">
+    <style>
+        .nav-tabs .nav-link {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0;
+        }
+
+        .nav-tabs .nav-link.active {
+            background-color: #ffffff;
+            border-bottom-color: transparent;
+        }
+
+        .room-card {
+            margin-bottom: 15px;
+        }
+
+        .unstyled-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .unstyled-link:hover, .unstyled-link:focus, .unstyled-link:active {
+            color: inherit;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<div class="includeBaseBody" th:replace="header :: bodyFragment"></div>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between">
+        <h2><span th:text="${username}">User</span></h2>
+        <a href="/rooms/create" class="btn btn-success">Создать комнату</a>
+    </div>
+    <ul class="nav nav-tabs mt-3" id="roomTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="created-tab" data-toggle="tab" href="#created" role="tab"
+               aria-controls="created" aria-selected="true">Запрошено создание</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="toAgree-tab" data-toggle="tab" href="#toAgree" role="tab"
+               aria-controls="toAgree" aria-selected="false">Входящие запросы</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="agreed-tab" data-toggle="tab" href="#agreed" role="tab"
+               aria-controls="agreed" aria-selected="false">Активные чаты</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="roomTabsContent">
+        <div class="tab-pane fade show active" id="created" role="tabpanel" aria-labelledby="created-tab">
+            <h3 class="mt-3">Запрошено создание</h3>
+            <div class="room-list">
+                <div class="card room-card" th:each="room : ${createdRooms}">
+                    <div class="card-body">
+                        <h5 class="card-title">Номер чата: <span th:text="${room.roomId}"></span></h5>
+                        <h5 class="card-title"><span th:text="${room.participantUsername}"></span></h5>
+                        <button class="btn btn-danger btn-sm" th:onclick="'deleteRoom(' + ${room.roomId} + ')'">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="toAgree" role="tabpanel" aria-labelledby="toAgree-tab">
+            <h3 class="mt-3">Входящие запросы</h3>
+            <div class="room-list">
+                <div class="card room-card" th:each="room : ${toAgreeRooms}">
+                    <div class="card-body">
+                        <h5 class="card-title">Номер чата: <span th:text="${room.roomId}"></span></h5>
+                        <h5 class="card-title"><span th:text="${room.participantUsername}"></span></h5>
+                        <button class="btn btn-success btn-sm" th:onclick="acceptRoom([[${room.roomId}]])">Принять</button>
+                        <button class="btn btn-danger btn-sm" th:onclick="'deleteRoom(' + ${room.roomId} + ')'">Удалить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="agreed" role="tabpanel" aria-labelledby="agreed-tab">
+            <h3 class="mt-3">Активные чаты</h3>
+            <div class="room-list">
+                <div class="card room-card" th:each="room : ${agreedRooms}">
+                    <div class="card-body">
+                        <a th:href="@{/rooms/{roomId}(roomId=${room.roomId})}" class="unstyled-link">
+                        <h5 class="card-title">Номер чата: <span th:text="${room.roomId}"></span></h5>
+                        <h5 class="card-title"><span th:text="${room.participantUsername}"></span></h5>
+                        <button class="btn btn-danger btn-sm" th:onclick="'deleteRoom(' + ${room.roomId} + ')'">Удалить</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+<script>
+    $(function () {
+        $('#roomTabs a').on('click', function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+    });
+
+    function deleteRoom(roomId) {
+        if (confirm('Вы уверены, что хотите удалить этот чат?')) {
+            $.ajax({
+                url: '/rooms/' + roomId,
+                type: 'DELETE',
+                success: function (result) {
+                    location.reload();
+                },
+                error: function (error) {
+                    alert('Произошла ошибка при удалении чата.');
+                }
+            });
+        }
+    }
+
+    function acceptRoom(roomId) {
+        $.ajax({
+            url: '/rooms/accept/' + roomId,
+            type: 'POST',
+            success: function (result) {
+                location.reload();
+            },
+            error: function (error) {
+                alert('Произошла ошибка при подтверждении создания чата.');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

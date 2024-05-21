@@ -26,6 +26,9 @@ public class Room {
     @Column(nullable = false, name = "status")
     private RoomStatus status;
 
+    @Column(name = "encryption_payload")
+    private byte[] encryptionPayload;
+
     @OneToMany(mappedBy = "room", orphanRemoval = true)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

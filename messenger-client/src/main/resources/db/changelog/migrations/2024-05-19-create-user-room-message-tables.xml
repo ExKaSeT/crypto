@@ -9,9 +9,7 @@
             <column name="username" type="VARCHAR">
                 <constraints nullable="false" primaryKey="true"/>
             </column>
-            <column name="refresh_token" type="VARCHAR">
-                <constraints nullable="false"/>
-            </column>
+            <column name="refresh_token" type="VARCHAR"/>
         </createTable>
 
         <createTable tableName="rooms">
@@ -25,6 +23,7 @@
             <column name="status" type="VARCHAR">
                 <constraints nullable="false"/>
             </column>
+            <column name="encryption_payload" type="BYTEA"/>
         </createTable>
 
         <createTable tableName="messages">

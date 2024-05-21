@@ -24,7 +24,6 @@ public class Message {
     @Column(nullable = false, name = "data_type")
     private DataType dataType;
 
-    @Lob
     @Column(nullable = false, name = "data")
     private byte[] data;
 }
