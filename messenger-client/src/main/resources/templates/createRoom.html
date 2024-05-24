@@ -19,6 +19,22 @@
         </div>
 
         <div class="form-section">
+            <label for="mode">Режим шифрования:</label>
+            <select id="mode" name="mode" class="form-control" th:field="*{mode}" onchange="toggleEncryptionFields()" required>
+                <option value="" disabled selected>Выберите режим шифрования</option>
+                <option th:each="type : ${modes}" th:value="${type}" th:text="${type}"></option>
+            </select>
+        </div>
+
+        <div class="form-section">
+            <label for="padding">Тип набивки:</label>
+            <select id="padding" name="padding" class="form-control" th:field="*{padding}" onchange="toggleEncryptionFields()" required>
+                <option value="" disabled selected>Выберите тип набивки</option>
+                <option th:each="type : ${paddings}" th:value="${type}" th:text="${type}"></option>
+            </select>
+        </div>
+
+        <div class="form-section">
             <label for="encryptionType">Тип шифрования:</label>
             <select id="encryptionType" name="encryptionType" class="form-control" th:field="*{encryptionType}" onchange="toggleEncryptionFields()" required>
                 <option value="" disabled selected>Выберите тип шифрования</option>

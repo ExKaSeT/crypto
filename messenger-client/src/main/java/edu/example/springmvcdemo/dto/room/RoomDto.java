@@ -31,10 +31,13 @@ public class RoomDto {
             String encryptionInfo;
             var encryption = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
             if (encryption.getEncryptionType().equals(EncryptionType.CAMELLIA)) {
-                encryptionInfo = "Camellia " + ((CamelliaPayload) encryption.getPayload()).getCamelliaKeySize().toString();
+                encryptionInfo = String.format("Camellia [ %s, %s ] %s", encryption.getMode().toString(),
+                        encryption.getPadding().toString(),
+                        ((CamelliaPayload) encryption.getPayload()).getCamelliaKeySize().toString());
             } else {
                 var RC5Payload = (RC5Payload) encryption.getPayload();
-                encryptionInfo = String.format("RC5 %s Кол-во раундов: %s Длина ключа: %s",
+                encryptionInfo = String.format("RC5 [ %s, %s ] %s | Кол-во раундов: %s | Длина ключа: %s",
+                        encryption.getMode().toString(), encryption.getPadding().toString(),
                         RC5Payload.getWordLengthBytes(), RC5Payload.getRoundCount(), RC5Payload.getKeyLength());
             }
             dto.setEncryptionInfo(encryptionInfo);

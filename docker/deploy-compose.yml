@@ -31,6 +31,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_BROKER_ID: 1
+      KAFKA_MESSAGE_MAX_BYTES: 20000000
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 20001200
     depends_on:
       - zookeeper
 
@@ -46,6 +48,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_BROKER_ID: 2
+      KAFKA_MESSAGE_MAX_BYTES: 20000000
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 20001200
     depends_on:
       - zookeeper
 
@@ -61,6 +65,8 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_MIN_INSYNC_REPLICAS: 2
       KAFKA_BROKER_ID: 3
+      KAFKA_MESSAGE_MAX_BYTES: 20000000
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 20001200
     depends_on:
       - zookeeper
 
@@ -129,7 +135,7 @@ services:
     ports:
       - "5434:5432"
     volumes:
-      - pg-client1-data:/var/lib/postgresql/data
+      - pg-client2-data:/var/lib/postgresql/data
 
   client2:
     image: messenger:1.0

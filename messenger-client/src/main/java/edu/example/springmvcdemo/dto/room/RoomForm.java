@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.encryption.symmetric.encryptor.Padding;
+import org.example.encryption.symmetric.mode.Mode;
 import org.hibernate.validator.constraints.Length;
 
 @Data
@@ -18,6 +20,12 @@ public class RoomForm {
     @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "В логине можно использовать только латинские символы и цифры")
     @Length(min = 5, max = 20, message = "Логин должен содержать от 5 до 20 символов")
     private String participantUsername;
+
+    @NotNull
+    private Mode mode;
+
+    @NotNull
+    private Padding padding;
 
     @NotNull
     private EncryptionType encryptionType;

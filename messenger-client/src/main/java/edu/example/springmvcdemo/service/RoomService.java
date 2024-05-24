@@ -6,7 +6,9 @@ import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
 import edu.example.springmvcdemo.dto.message.OpenKeyExchangeDto;
 import edu.example.springmvcdemo.dto.rest_dto.room.CreateRoomResponseDto;
 import edu.example.springmvcdemo.dto.rest_dto.room.UserRoomDto;
+import edu.example.springmvcdemo.dto.room.RoomForm;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
+import edu.example.springmvcdemo.model.EncryptionType;
 import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.model.RoomStatus;
 import lombok.RequiredArgsConstructor;
@@ -103,7 +105,7 @@ public class RoomService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    public Room createRoom(String participantUsername, EncryptionPayload encryptionPayload) {
+    public Room createRoom(String participantUsername, RoomForm roomForm) {
         var result = restClientConfig.getRestClient().post()
                 .uri(restClientConfig.getUri("/room/" + participantUsername))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -112,6 +114,12 @@ public class RoomService {
                 .toEntity(CreateRoomResponseDto.class);
 
         var roomId = result.getBody().getRoomId();
+
+        var encryptionTypePayload = roomForm.getEncryptionType()
+                .equals(EncryptionType.CAMELLIA) ? roomForm.getCamelliaPayload() : roomForm.getRc5Payload();
+        var encryptionPayload = new EncryptionPayload(roomForm.getEncryptionType(), encryptionTypePayload,
+                roomForm.getMode(), roomForm.getPadding(), null);
+        encryptionPayload.setInitialVector(EncryptionUtils.generateInitVector(encryptionPayload));
 
         var room = new Room();
         room.setStatus(RoomStatus.CREATED);

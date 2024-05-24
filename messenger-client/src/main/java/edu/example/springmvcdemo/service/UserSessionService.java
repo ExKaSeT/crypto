@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -134,6 +135,7 @@ public class UserSessionService {
                         log.info("Refresh token rejected, need re-auth");
                         user.setRefreshToken(null);
                         userSessionRepository.save(user);
+                        SecurityContextHolder.clearContext();
                         throw new AuthenticationServiceException("Refresh token rejected, need re-auth");
                     }
                     if (response.getStatusCode().isError()) {

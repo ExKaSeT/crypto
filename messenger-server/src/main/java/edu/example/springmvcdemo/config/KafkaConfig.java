@@ -18,6 +18,8 @@ import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.util.backoff.FixedBackOff;
 
+import java.util.Map;
+
 @Configuration
 @RequiredArgsConstructor
 public class KafkaConfig {
@@ -26,12 +28,15 @@ public class KafkaConfig {
     // retries count on not fatal errors
     private static final int CONSUMER_RETRIES_COUNT = 3;
     private static final long CONSUMER_RETRIES_INTERVAL_MS = 100L;
+    private static final String MB_20_IN_BYTES = "20000000";
 
     private final KafkaProperties properties;
 
     @Bean
     public NewTopic messagesTopic() {
-        return new NewTopic(MESSAGES_TOPIC_NAME, MESSAGES_PARTITION_COUNT, (short) 2);
+        var topic = new NewTopic(MESSAGES_TOPIC_NAME, MESSAGES_PARTITION_COUNT, (short) 2);
+        topic.configs(Map.of("max.message.bytes", MB_20_IN_BYTES));
+        return topic;
     }
 
     @Bean
@@ -65,6 +70,7 @@ public class KafkaConfig {
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.JsonSerializer");
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.JsonSerializer");
+        props.put(ProducerConfig.MAX_REQUEST_SIZE_CONFIG, MB_20_IN_BYTES);
         return new DefaultKafkaProducerFactory<>(props);
     }
 
@@ -78,7 +84,9 @@ public class KafkaConfig {
         props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, "500");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "10");
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "3");
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, MB_20_IN_BYTES);
+        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, 60_000_000);
         return new DefaultKafkaConsumerFactory<>(props);
     }
 }

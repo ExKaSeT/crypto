@@ -16,9 +16,6 @@ import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.encryption.assymetric.DiffieHellmanEncryption;
-import org.example.encryption.symmetric.encryptor.Padding;
-import org.example.encryption.symmetric.encryptor.SymmetricEncryptor;
-import org.example.encryption.symmetric.mode.Mode;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -62,8 +59,7 @@ public class MessageService {
     }
 
     public void sendFileEncrypted(Room room, MultipartFile file) {
-        var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-        var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+        var encryptionPayload = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
         byte[] fileBytes;
         try {
             fileBytes = file.getBytes();
@@ -74,7 +70,7 @@ public class MessageService {
         var fileDtoBytes = SerializationUtils.serialize(fileDto);
         var messageDto = new MessageDto();
         messageDto.setDataType(DataType.FILE);
-        try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+        try (var encryptor = EncryptionUtils.getEncryption(encryptionPayload, room.getKey())) {
             messageDto.setData(encryptor.encrypt(fileDtoBytes));
         }
         Long messageId = sendMessage(room.getRoomId(), messageDto);
@@ -83,12 +79,11 @@ public class MessageService {
     }
 
     public void sendTextEncrypted(Room room, String text) {
-        var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-        var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+        var encryptionPayload = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
         var textBytes = text.getBytes();
         var messageDto = new MessageDto();
         messageDto.setDataType(DataType.STRING);
-        try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+        try (var encryptor = EncryptionUtils.getEncryption(encryptionPayload, room.getKey())) {
             messageDto.setData(encryptor.encrypt(textBytes));
         }
         Long messageId = sendMessage(room.getRoomId(), messageDto);
@@ -138,16 +133,15 @@ public class MessageService {
                         roomRepository.save(room);
                     }
                 } else if (payload instanceof MessageDto messageDto) {
-                    var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-                    var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+                    var encryptionPayload = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
                     byte[] decrypted;
-                    try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+                    try (var encryptor = EncryptionUtils.getEncryption(encryptionPayload, room.getKey())) {
                         decrypted = encryptor.decrypt(messageDto.getData());
                     }
                     saveMessage(message.getMessageId(), room.getRoomId(), decrypted, messageDto.getDataType(),
                             false, new Timestamp(message.getEpochTime()));
                 }
-
+//                log.info("Receive message: " + message);
             } catch (Exception ex) {
                 log.error("Can't process message: " + message + "\n" + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
             }

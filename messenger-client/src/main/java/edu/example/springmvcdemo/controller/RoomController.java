@@ -2,7 +2,6 @@ package edu.example.springmvcdemo.controller;
 
 import edu.example.springmvcdemo.dao.MessageRepository;
 import edu.example.springmvcdemo.dao.RoomRepository;
-import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
 import edu.example.springmvcdemo.dto.encryption.RC5WordLengthBytes;
 import edu.example.springmvcdemo.dto.message.FileDto;
 import edu.example.springmvcdemo.dto.message.MessageForm;
@@ -21,6 +20,8 @@ import jakarta.validation.Validator;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.encryption.symmetric.encryptor.Padding;
+import org.example.encryption.symmetric.mode.Mode;
 import org.example.round_key.CamelliaKeyGenerator;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -119,6 +120,8 @@ public class RoomController {
     @GetMapping("/create")
     public String showCreateRoomForm(Model model) {
         model.addAttribute("roomForm", new RoomForm());
+        model.addAttribute("modes", Mode.values());
+        model.addAttribute("paddings", Padding.values());
         model.addAttribute("encryptionTypes", EncryptionType.values());
         model.addAttribute("camelliaKeySizes", CamelliaKeyGenerator.CamelliaKeySize.values());
         model.addAttribute("rc5WordLengths", RC5WordLengthBytes.values());
@@ -134,6 +137,8 @@ public class RoomController {
                 validator.validate(encryptionPayload, Default.class).stream()
                         .map(ConstraintViolation::getMessage).toList();
         if (bindingResult.hasErrors() || !modeValidErrors.isEmpty()) {
+            model.addAttribute("modes", Mode.values());
+            model.addAttribute("paddings", Padding.values());
             model.addAttribute("encryptionTypes", EncryptionType.values());
             model.addAttribute("camelliaKeySizes", CamelliaKeyGenerator.CamelliaKeySize.values());
             model.addAttribute("rc5WordLengths", RC5WordLengthBytes.values());
@@ -145,8 +150,10 @@ public class RoomController {
         }
 
         try {
-            roomService.createRoom(roomForm.getParticipantUsername(), new EncryptionPayload(roomForm.getEncryptionType(), encryptionPayload));
+            roomService.createRoom(roomForm.getParticipantUsername(), roomForm);
         } catch (Exception ex) {
+            model.addAttribute("modes", Mode.values());
+            model.addAttribute("paddings", Padding.values());
             model.addAttribute("encryptionTypes", EncryptionType.values());
             model.addAttribute("camelliaKeySizes", CamelliaKeyGenerator.CamelliaKeySize.values());
             model.addAttribute("rc5WordLengths", RC5WordLengthBytes.values());
@@ -154,7 +161,7 @@ public class RoomController {
             return "createRoom";
         }
 
-        return "redirect:/rooms"; // Перенаправление на список комнат после успешного создания
+        return "redirect:/rooms";
     }
 
     @PostMapping("/accept/{roomId}")

@@ -21,7 +21,7 @@ public class SchedulingConfig {
     private final RoomService roomService;
     private final MessageService messageService;
 
-    @Scheduled(cron = "*/5 * * * * *")
+    @Scheduled(fixedRate = 60_000, initialDelay = 0)
     public void updateTokens() {
         userSessionService.updateTokens();
         log.info("Tokens update success");
