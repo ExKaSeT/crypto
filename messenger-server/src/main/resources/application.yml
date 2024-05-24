@@ -2,6 +2,11 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
 
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+
   jpa:
     properties:
       hibernate:

@@ -4,27 +4,32 @@ import edu.example.springmvcdemo.config.RestClientConfig;
 import edu.example.springmvcdemo.dao.MessageRepository;
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
+import edu.example.springmvcdemo.dto.message.FileDto;
 import edu.example.springmvcdemo.dto.message.MessageDto;
 import edu.example.springmvcdemo.dto.message.OpenKeyExchangeDto;
 import edu.example.springmvcdemo.dto.rest_dto.message.MessageResponseDto;
 import edu.example.springmvcdemo.dto.rest_dto.message.SendMessageRequestDto;
 import edu.example.springmvcdemo.dto.rest_dto.message.SendMessageResponseDto;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
-import edu.example.springmvcdemo.model.DataType;
-import edu.example.springmvcdemo.model.Message;
-import edu.example.springmvcdemo.model.MessageId;
-import edu.example.springmvcdemo.model.RoomStatus;
+import edu.example.springmvcdemo.model.*;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.encryption.assymetric.DiffieHellmanEncryption;
+import org.example.encryption.symmetric.encryptor.Padding;
+import org.example.encryption.symmetric.encryptor.SymmetricEncryptor;
+import org.example.encryption.symmetric.mode.Mode;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,7 +45,7 @@ public class MessageService {
     private final UserSessionService userSessionService;
     private final MessageRepository messageRepository;
 
-    public void sendMessage(long roomId, Object data, @Nullable DataType dataType) {
+    public Long sendMessage(long roomId, Object data) {
         var room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
@@ -53,17 +58,41 @@ public class MessageService {
                 .retrieve()
                 .toEntity(SendMessageResponseDto.class);
 
-        if (isNull(dataType)) {
-            return;
-        }
+        return result.getBody().getMessageId();
+    }
 
-        var messageId = result.getBody().getMessageId();
-        var message = new Message();
-        message.setMessageId(new MessageId(messageId, roomId));
-        message.setRoom(room);
-        message.setData(dataBytes);
-        message.setDataType(dataType);
-        messageRepository.save(message);
+    public void sendFileEncrypted(Room room, MultipartFile file) {
+        var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
+        var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        var fileDto = new FileDto(file.getOriginalFilename(), fileBytes);
+        var fileDtoBytes = SerializationUtils.serialize(fileDto);
+        var messageDto = new MessageDto();
+        messageDto.setDataType(DataType.FILE);
+        try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+            messageDto.setData(encryptor.encrypt(fileDtoBytes));
+        }
+        Long messageId = sendMessage(room.getRoomId(), messageDto);
+        saveMessage(messageId, room.getRoomId(), fileDtoBytes,
+                DataType.FILE, true, null);
+    }
+
+    public void sendTextEncrypted(Room room, String text) {
+        var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
+        var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+        var textBytes = text.getBytes();
+        var messageDto = new MessageDto();
+        messageDto.setDataType(DataType.STRING);
+        try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+            messageDto.setData(encryptor.encrypt(textBytes));
+        }
+        Long messageId = sendMessage(room.getRoomId(), messageDto);
+        saveMessage(messageId, room.getRoomId(), textBytes, DataType.STRING, true, null);
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
@@ -73,7 +102,8 @@ public class MessageService {
                 .header("Cookie", userSessionService.getAccessCookieString())
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .toEntity(new ParameterizedTypeReference<List<MessageResponseDto>>() {});
+                .toEntity(new ParameterizedTypeReference<List<MessageResponseDto>>() {
+                });
 
         var messages = result.getBody();
         assert messages != null;
@@ -96,7 +126,7 @@ public class MessageService {
                         room.setKey(sharedSecret);
                         room.setStatus(RoomStatus.AGREED);
                         var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-                        sendMessage(room.getRoomId(), new OpenKeyExchangeDto(myOpenKey.toString(), encryptionInfo), null);
+                        sendMessage(room.getRoomId(), new OpenKeyExchangeDto(myOpenKey.toString(), encryptionInfo));
                         roomRepository.save(room);
                     } else { // receive from room creator
                         var mySecretKey = room.getKey();
@@ -107,14 +137,37 @@ public class MessageService {
                         room.setEncryptionPayload(SerializationUtils.serialize(openKeyDto.getEncryptionPayload()));
                         roomRepository.save(room);
                     }
-                } else if (payload instanceof MessageDto) {
-                    // TODO:
-                    continue;
+                } else if (payload instanceof MessageDto messageDto) {
+                    var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
+                    var encryption = EncryptionUtils.getEncryption(encryptionInfo, room.getKey());
+                    byte[] decrypted;
+                    try (var encryptor = new SymmetricEncryptor(encryption, Mode.CBC, Padding.ANSI_X_923)) {
+                        decrypted = encryptor.decrypt(messageDto.getData());
+                    }
+                    saveMessage(message.getMessageId(), room.getRoomId(), decrypted, messageDto.getDataType(),
+                            false, new Timestamp(message.getEpochTime()));
                 }
 
             } catch (Exception ex) {
                 log.error("Can't process message: " + message + "\n" + ex.getMessage() + Arrays.toString(ex.getStackTrace()));
             }
         }
+    }
+
+    public Message saveMessage(long messageId, long roomId, byte[] dataBytes, DataType dataType, boolean isMine, @Nullable Timestamp timestamp) {
+        var room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        var message = new Message();
+        message.setMessageId(new MessageId(messageId, roomId));
+        message.setRoom(room);
+        message.setData(dataBytes);
+        message.setDataType(dataType);
+        message.setIsMine(isMine);
+        if (isNull(timestamp)) {
+            message.setTimestamp(new Timestamp(Instant.now().toEpochMilli()));
+        } else {
+            message.setTimestamp(timestamp);
+        }
+        return messageRepository.save(message);
     }
 }

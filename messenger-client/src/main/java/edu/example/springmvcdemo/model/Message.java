@@ -1,12 +1,16 @@
 package edu.example.springmvcdemo.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.sql.Timestamp;
 
 @Entity
 @Table(name = "messages")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Message {
 
     @EmbeddedId
@@ -26,4 +30,7 @@ public class Message {
 
     @Column(nullable = false, name = "data")
     private byte[] data;
+
+    @Column(name = "is_mine")
+    private Boolean isMine;
 }

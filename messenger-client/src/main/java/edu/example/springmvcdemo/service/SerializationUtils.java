@@ -2,9 +2,9 @@ package edu.example.springmvcdemo.service;
 
 import java.io.*;
 
-public class SerializationUtils {
+public interface SerializationUtils {
 
-    public static byte[] serialize(Object obj) {
+    static byte[] serialize(Object obj) {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
             objectOutputStream.writeObject(obj);
@@ -14,7 +14,7 @@ public class SerializationUtils {
         }
     }
 
-    public static Object deserialize(byte[] data) {
+    static Object deserialize(byte[] data) {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(data);
              ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream)) {
             return objectInputStream.readObject();

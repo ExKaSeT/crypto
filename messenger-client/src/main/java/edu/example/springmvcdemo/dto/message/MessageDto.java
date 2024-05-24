@@ -12,5 +12,5 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class MessageDto implements Serializable {
     private DataType dataType;
-    private Object data;
+    private byte[] data;
 }

@@ -42,6 +42,9 @@
             <column name="data" type="BYTEA">
                 <constraints nullable="false"/>
             </column>
+            <column name="is_mine" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 </databaseChangeLog>

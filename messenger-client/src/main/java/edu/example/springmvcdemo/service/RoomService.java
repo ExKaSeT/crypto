@@ -82,7 +82,7 @@ public class RoomService {
         var encryption = new DiffieHellmanEncryption();
         var openKey = encryption.generateSecretAndOpenKey();
 
-        messageService.sendMessage(roomId, new OpenKeyExchangeDto(openKey.toString(), null), null);
+        messageService.sendMessage(roomId, new OpenKeyExchangeDto(openKey.toString(), null));
 
         room.setKey(encryption.getSecret().toString());
         room.setStatus(RoomStatus.CREATED);

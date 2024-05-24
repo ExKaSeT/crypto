@@ -14,7 +14,7 @@ import static java.util.Objects.nonNull;
 public class SymmetricEncryptor implements AutoCloseable {
     private static final String ENCRYPTED_SUB_PATH_NAME = "encrypted";
     private static final String DECRYPTED_SUB_PATH_NAME = "decrypted";
-    private static final int MAX_BYTE_BUFFER_LENGTH = 10_000;
+    private static final int MAX_BYTE_BUFFER_LENGTH = 1_000_000;
     private final int byteBufferLength;
     private final SymmetricEncryption encryption;
     private final Mode mode;
