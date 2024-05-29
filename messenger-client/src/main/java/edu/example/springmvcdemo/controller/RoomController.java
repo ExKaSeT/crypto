@@ -5,7 +5,6 @@ import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dto.encryption.RC5WordLengthBytes;
 import edu.example.springmvcdemo.dto.message.FileDto;
 import edu.example.springmvcdemo.dto.message.MessageForm;
-import edu.example.springmvcdemo.dto.message.ShowMessageDto;
 import edu.example.springmvcdemo.dto.room.RoomDto;
 import edu.example.springmvcdemo.dto.room.RoomForm;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
@@ -81,7 +80,7 @@ public class RoomController {
         if (nonNull(messageForm) && nonNull(messageForm.getText()) && !messageForm.getText().isBlank()) {
             messageService.sendTextEncrypted(room, messageForm.getText());
         }
-        if (nonNull(file) && !file.isEmpty()) {
+        if (nonNull(file) && nonNull(file.getOriginalFilename()) && !file.getOriginalFilename().isBlank()) {
             messageService.sendFileEncrypted(room, file);
         }
         return "redirect:/rooms/" + roomId;
@@ -92,11 +91,8 @@ public class RoomController {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new EntityNotFoundException("Room not found"));
 
-        var messageDtos = room.getMessages().stream().map(ShowMessageDto::fromMessage).toList();
         model.addAttribute("room", room);
-        model.addAttribute("messages", messageDtos);
         model.addAttribute("newMessage", new MessageForm());
-
         return "room";
     }
 

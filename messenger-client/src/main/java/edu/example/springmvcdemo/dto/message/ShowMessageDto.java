@@ -1,5 +1,6 @@
 package edu.example.springmvcdemo.dto.message;
 
+import edu.example.springmvcdemo.dto.room.RoomDto;
 import edu.example.springmvcdemo.model.*;
 import edu.example.springmvcdemo.service.SerializationUtils;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ import static java.util.Objects.nonNull;
 public class ShowMessageDto {
     private Long id;
 
-    private Room room;
+    private RoomDto room;
 
     private Timestamp timestamp;
 
@@ -37,7 +38,7 @@ public class ShowMessageDto {
     public static ShowMessageDto fromMessage(Message message) {
         var dto = new ShowMessageDto();
         dto.setId(message.getMessageId().getId());
-        dto.setRoom(message.getRoom());
+        dto.setRoom(RoomDto.fromRoom(message.getRoom()));
         dto.setTimestamp(message.getTimestamp());
         dto.setIsMine(message.getIsMine());
         dto.setDataType(message.getDataType());

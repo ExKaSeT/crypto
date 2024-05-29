@@ -806,6 +806,35 @@
         .ps-container:hover > .ps-scrollbar-y-rail:hover > .ps-scrollbar-y {
             background-color: #a2adb7
         }
+
+        #progress-bar-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f3f3f3;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        #progress-bar-fill {
+            height: 100%;
+            width: 0;
+            background-color: #4caf50;
+            border-radius: 10px;
+            transition: width 0.25s;
+        }
     </style>
 </head>
 <body>
@@ -832,45 +861,13 @@
                             </div>
                             <div class="d-flex flex-row mb-3 navigation-mobile scrollable-chat-panel chat-panel-scroll ps-container ps-active-y"
                                  data-ps-id="1d424210-a547-9a89-b16c-41462cac3e01">
-                                <div class="w-100 p-3">
+                                <div id="message-container" class="w-100 p-3">
                                     <div class="d-flex flex-row-reverse mb-2" style="min-height:100vh">
                                     </div>
 
-
-                                    <div th:each="message : ${messages}" class="message">
-                                        <div th:if="${!message.isMine}" class="left-chat-message fs-13 mb-2">
-                                            <a style="color: inherit;" th:if="${message.dataType.name() == 'FILE' && !message.isImage}" th:href="@{/rooms/{roomId}/message/{messageId}(messageId=${message.id}, roomId=${room.roomId})}">
-                                                <p th:text="'Файл: ' + ${message.filename}" class="mb-0 pb-3"></p>
-                                            </a>
-                                            <p th:if="${message.dataType.name() == 'STRING'}" class="mb-0 pb-3" th:text="${message.text}" ></p>
-                                            <img th:if="${message.dataType.name() == 'FILE' && message.isImage}" th:src="'data:image/' + ${message.imageExtension} + ';base64,' + ${message.imageBytes}" style="max-width: 100%;"/>
-                                            <div class="message-options">
-                                                <div class="message-time" style="white-space: nowrap" th:text="${#dates.format(message.timestamp, 'dd-MM-yyyy HH:mm:ss')}"></div>
-                                            </div>
-                                        </div>
-                                        <div th:if="${message.isMine}" class="d-flex flex-row-reverse mb-2">
-                                            <div class="right-chat-message fs-13 mb-2">
-                                                <div class="d-flex flex-row">
-                                                    <a style="color: inherit;" th:if="${message.dataType.name() == 'FILE' && !message.isImage}" th:href="@{/rooms/{roomId}/message/{messageId}(messageId=${message.id}, roomId=${room.roomId})}">
-                                                        <div th:text="'Файл: ' + ${message.filename}" class="pr-2 pb-3"></div>
-                                                    </a>
-                                                    <div th:if="${message.dataType.name() == 'STRING'}" th:text="${message.text}" class="pr-2 pb-3"></div>
-                                                    <img th:if="${message.dataType.name() == 'FILE' && message.isImage}" th:src="'data:image/' + ${message.imageExtension} + ';base64,' + ${message.imageBytes}" style="max-width: 100%;"/>
-                                                </div>
-                                                <div class="message-options dark">
-                                                    <div class="message-time" style="white-space: nowrap" th:text="${#dates.format(message.timestamp, 'dd-MM-yyyy HH:mm:ss')}"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-<!--                                        <div class="message-content" th:classappend="${message.isMine} ? 'mine' : 'not-mine'">-->
-<!--                                            <span th:if="${message.dataType.name() == 'STRING'}" th:text="${message.text}"></span>-->
-<!--                                            <img th:if="${message.dataType.name() == 'FILE' && message.isImage}" th:src="'data:image/' + ${message.imageExtension} + ';base64,' + ${message.imageBytes}" style="max-width: 100%;"/>-->
-<!--                                            <a th:if="${message.dataType.name() == 'FILE' && !message.isImage}" th:href="@{/rooms/{roomId}/message/{messageId}(messageId=${message.messageId}, roomId=${room.roomId})}">Скачать файл</a>-->
-<!--                                            <div class="timestamp" th:text="${#dates.format(message.timestamp, 'dd-MM-yyyy HH:mm:ss')}"></div>-->
-<!--                                        </div>-->
-                                    </div>
                                 </div>
+
+
                                 <div class="ps-scrollbar-x-rail" style="left: 0px; bottom: 3px;">
                                     <div class="ps-scrollbar-x" style="left: 0px; width: 0px;"></div>
                                 </div>
@@ -885,34 +882,46 @@
                                 </div>
                             </div>
 
-<!--                            <form th:action="@{/rooms/{roomId}/upload(roomId=${room.roomId})}" method="post" enctype="multipart/form-data" class="form-container">-->
-<!--                                <div class="form-group">-->
-<!--                                    <label for="text">Текст сообщения:</label>-->
-<!--                                    <textarea id="text" name="text" class="form-control" th:field="*{newMessage.text}"></textarea>-->
+<!--                            <div class="chat-search pl-3 pr-3">-->
+<!--                                <form th:action="@{/rooms/{roomId}/send(roomId=${room.roomId})}" method="post" enctype="multipart/form-data" class="form-container">-->
+
+<!--                                <div class="input-group">-->
+<!--                                    <textarea id="text" name="text" type="text" class="form-control" placeholder="Напишите сообщение" th:field="*{newMessage.text}"></textarea>-->
+<!--                                    <div class="input-group-append prepend-white">-->
+<!--                                      <span class="input-group-text pl-2 pr-2">-->
+<!--                                        <input type="file" id="file" name="file" class="d-none"/>-->
+<!--                                          <button type="submit" id="submit" class="d-none"></button>-->
+<!--                                        <i class="fs-19 bi bi-file-earmark-plus ml-2 mr-2" onclick="document.getElementById('file').click();"></i>-->
+<!--                                        <i class="fs-19 bi bi-cursor ml-2 mr-2" onclick="document.getElementById('submit').click();"></i>-->
+<!--                                      </span>-->
+<!--                                    </div>-->
 <!--                                </div>-->
-<!--                                <div class="form-group">-->
-<!--                                    <label for="file">Или загрузить файл:</label>-->
-<!--                                    <input type="file" id="file" name="file" class="form-control"/>-->
-<!--                                </div>-->
-<!--                                <button type="submit" class="btn btn-primary">Отправить</button>-->
-<!--                            </form>-->
+<!--                                </form>-->
+<!--                            </div>-->
 
                             <div class="chat-search pl-3 pr-3">
-                                <form th:action="@{/rooms/{roomId}/send(roomId=${room.roomId})}" method="post" enctype="multipart/form-data" class="form-container">
-
-                                <div class="input-group">
-                                    <textarea id="text" name="text" type="text" class="form-control" placeholder="Напишите сообщение" th:field="*{newMessage.text}"></textarea>
-                                    <div class="input-group-append prepend-white">
-                                      <span class="input-group-text pl-2 pr-2">
-                                        <input type="file" id="file" name="file" class="d-none"/>
-                                          <button type="submit" id="submit" class="d-none"></button>
-                                        <i class="fs-19 bi bi-file-earmark-plus ml-2 mr-2" onclick="document.getElementById('file').click();"></i>
-                                        <i class="fs-19 bi bi-cursor ml-2 mr-2" onclick="document.getElementById('submit').click();"></i>
-                                      </span>
+                                <form id="message-form" method="post" enctype="multipart/form-data" class="form-container">
+                                    <div class="input-group">
+                                        <textarea id="text" name="text" type="text" class="form-control" placeholder="Напишите сообщение"></textarea>
+                                        <div class="input-group-append prepend-white">
+                                            <span class="input-group-text pl-2 pr-2">
+                                                <input type="file" id="file" name="file" class="d-none"/>
+                                                <i class="fs-19 bi bi-file-earmark-plus ml-2 mr-2" onclick="document.getElementById('file').click();"></i>
+                                                <i class="fs-19 bi bi-cursor ml-2 mr-2" onclick="submitForm();"></i>
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
                                 </form>
                             </div>
+
+                            <div id="progress-bar-container">
+                                Отправка...
+                                <div id="progress-bar">
+                                    <div id="progress-bar-fill"></div>
+                                </div>
+                                <div id="progress-percentage">0%</div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -920,6 +929,51 @@
         </div>
     </div>
 </div>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var roomId = [[${room.roomId}]]; // Вставка roomId из модели
+
+    function submitForm() {
+        var form = $('#message-form')[0];
+        var formData = new FormData(form);
+
+        $('#progress-bar-container').show();
+        $('#progress-bar-fill').css('width', '0%');
+        $('#progress-percentage').text('0%');
+
+        $.ajax({
+            url: `/rooms/${roomId}/send`,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                var xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var percentComplete = Math.round((e.loaded / e.total) * 100);
+                        $('#progress-bar-fill').css('width', percentComplete + '%');
+                        $('#progress-percentage').text(percentComplete + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            success: function(response) {
+                // Обработка успешного ответа
+                $('#progress-bar-container').hide();
+                $('#text').val('');
+                $('#file').val('');
+                fetchMessages();
+            },
+            error: function(xhr, status, error) {
+                // Обработка ошибки
+                $('#progress-bar-container').hide();
+                console.error('Ошибка при отправке сообщения:', error);
+            }
+        });
+    }
+    /*]]>*/
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.perfect-scrollbar/0.6.7/js/min/perfect-scrollbar.jquery.min.js"></script>
 <script>
@@ -941,6 +995,82 @@
             $(this).closest('.chat').find('.chat-user-detail').toggleClass("active");
         });
     })(jQuery);
+</script>
+<script>
+    var pullFromId = 0;
+    var roomId = [[${room.roomId}]];
+
+    function fetchMessages() {
+        $.ajax({
+            url: `/rooms/${roomId}/messages/${pullFromId}`,
+            method: 'GET',
+            success: function(response) {
+                if (response && response.length > 0) {
+                    response.forEach(function(message) {
+                        appendMessage(message);
+                        pullFromId = message.id; // Update pullFromId to the latest message id
+                    });
+                    var position = $('.scrollable-chat-panel')[0].scrollHeight;
+                    $('.scrollable-chat-panel').scrollTop(position);
+                    $('.scrollable-chat-panel').perfectScrollbar('update');
+                }
+            },
+            error: function(error) {
+                console.error('Error fetching messages:', error);
+            }
+        });
+    }
+
+    function appendMessage(message) {
+        var messageContainer = $('#message-container');
+        var messageElement;
+        var isImage = Boolean(message.image);
+
+        if (message.isMine) {
+            messageElement = `
+                    <div class="d-flex flex-row-reverse mb-2">
+                        <div class="right-chat-message fs-13 mb-2">
+                            <div class="d-flex flex-row">
+                                ${message.dataType === 'FILE' && !isImage ?
+                `<a style="color: inherit;" href="/rooms/${roomId}/message/${message.id}">
+                                        <div class="pr-2 pb-3">Файл: ${message.filename}</div>
+                                    </a>` : ''}
+                                ${message.dataType === 'STRING' ?
+                `<div class="pr-2 pb-3">${message.text}</div>` : ''}
+                                ${message.dataType === 'FILE' && isImage ?
+                `<img src="data:image/${message.imageExtension};base64,${message.imageBytes}" style="max-width: 100%;"/>` : ''}
+                            </div>
+                            <div class="message-options dark">
+                                <div class="message-time" style="white-space: nowrap">
+                                    ${new Date(message.timestamp).toLocaleString('ru-RU')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+        } else {
+            messageElement = `
+                    <div class="left-chat-message fs-13 mb-2">
+                        ${message.dataType === 'FILE' && !isImage ?
+                `<a style="color: inherit;" href="/rooms/${roomId}/message/${message.id}">
+                                <p class="mb-0 pb-3">Файл: ${message.filename}</p>
+                            </a>` : ''}
+                        ${message.dataType === 'STRING' ?
+                `<p class="mb-0 pb-3">${message.text}</p>` : ''}
+                        ${message.dataType === 'FILE' && isImage ?
+                `<img src="data:image/${message.imageExtension};base64,${message.imageBytes}" style="max-width: 100%;"/>` : ''}
+                        <div class="message-options">
+                            <div class="message-time" style="white-space: nowrap">
+                                ${new Date(message.timestamp).toLocaleString('ru-RU')}
+                            </div>
+                        </div>
+                    </div>`;
+        }
+
+        messageContainer.append(messageElement);
+    }
+
+    // Fetch messages every 3 seconds
+    setInterval(fetchMessages, 3000);
 </script>
 </body>
 </html>
