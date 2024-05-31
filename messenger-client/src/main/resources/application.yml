@@ -1,11 +1,10 @@
 spring:
+  http:
+    multipart:
+      enabled: false
+
   datasource:
     driver-class-name: org.postgresql.Driver
-
-  servlet:
-    multipart:
-      max-file-size: 20MB
-      max-request-size: 20MB
 
   jpa:
     properties:
@@ -19,3 +18,4 @@ spring:
   liquibase.change-log: classpath:/db/changelog/db-changelog.xml
 
 remote-server.url: http://localhost:8080
+storage.dir: storage

@@ -9,7 +9,9 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class FileDto implements Serializable {
-    private String filename;
-    private byte[] data;
+public class FileLocalDto implements Serializable {
+    private String filename; // original
+    private String localFilename;
+    private FileStatus status;
+    private Long sizeBytes;
 }

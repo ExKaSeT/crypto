@@ -33,6 +33,11 @@ public class RoomService {
     private final UserSessionService userSessionService;
     private final MessageService messageService;
 
+    public Room getById(long roomId) {
+        return roomRepository.findById(roomId)
+                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+    }
+
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void updateRooms() {
         if (!userSessionService.isUserLoggedIn()) {
@@ -73,8 +78,7 @@ public class RoomService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void agreeRoom(long roomId) {
-        var room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        var room = getById(roomId);
 
         restClientConfig.getRestClient().post()
                 .uri(restClientConfig.getUri("/room/agree/" + roomId))
@@ -84,7 +88,7 @@ public class RoomService {
         var encryption = new DiffieHellmanEncryption();
         var openKey = encryption.generateSecretAndOpenKey();
 
-        messageService.sendMessage(roomId, new OpenKeyExchangeDto(openKey.toString(), null));
+        messageService.sendMessage(room, new OpenKeyExchangeDto(openKey.toString(), null));
 
         room.setKey(encryption.getSecret().toString());
         room.setStatus(RoomStatus.CREATED);
@@ -93,8 +97,7 @@ public class RoomService {
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deleteRoom(long roomId) {
-        var room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
+        var room = getById(roomId);
 
         restClientConfig.getRestClient().delete()
                 .uri(restClientConfig.getUri("/room/" + roomId))

@@ -45,7 +45,8 @@ public class ShowMessageDto {
         switch (message.getDataType()) {
             case STRING -> dto.setText(new String(message.getData()));
             case FILE -> {
-                var fileInfo = (FileDto) SerializationUtils.deserialize(message.getData());
+                // TODO:
+                var fileInfo = (FileLocalDto) SerializationUtils.deserialize(message.getData());
                 var extension = ImageExtension.isImage(fileInfo.getFilename());
                 if (nonNull(extension)) {
                     dto.setImage(true);

@@ -4,7 +4,8 @@ import edu.example.springmvcdemo.config.RestClientConfig;
 import edu.example.springmvcdemo.dao.MessageRepository;
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
-import edu.example.springmvcdemo.dto.message.FileDto;
+import edu.example.springmvcdemo.dto.message.FileLocalDto;
+import edu.example.springmvcdemo.dto.message.FileStatus;
 import edu.example.springmvcdemo.dto.message.MessageDto;
 import edu.example.springmvcdemo.dto.message.OpenKeyExchangeDto;
 import edu.example.springmvcdemo.dto.rest_dto.message.MessageResponseDto;
@@ -21,14 +22,14 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Objects.isNull;
 
@@ -41,15 +42,13 @@ public class MessageService {
     private final RestClientConfig restClientConfig;
     private final UserSessionService userSessionService;
     private final MessageRepository messageRepository;
+    private final StorageService storageService;
 
-    public Long sendMessage(long roomId, Object data) {
-        var room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new EntityNotFoundException("Room not found"));
-
+    public Long sendMessage(Room room, Object data) {
         var dataBytes = SerializationUtils.serialize(data);
         var result = restClientConfig.getRestClient().post()
                 .uri(restClientConfig.getUri("/message/send"))
-                .body(new SendMessageRequestDto(roomId, dataBytes))
+                .body(new SendMessageRequestDto(room.getRoomId(), dataBytes))
                 .accept(MediaType.APPLICATION_JSON)
                 .header("Cookie", userSessionService.getAccessCookieString())
                 .retrieve()
@@ -58,22 +57,24 @@ public class MessageService {
         return result.getBody().getMessageId();
     }
 
-    public void sendFileEncrypted(Room room, MultipartFile file) {
+    public void sendFileEncrypted(Room room, String filename, InputStream stream) {
         var encryptionPayload = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-        byte[] fileBytes;
-        try {
-            fileBytes = file.getBytes();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        var fileDto = new FileDto(file.getOriginalFilename(), fileBytes);
+        var fileLocalDto = new FileLocalDto(filename, UUID.randomUUID().toString(),
+                FileStatus.IN_PROGRESS, null);
+        var fileLocalBytes = SerializationUtils.serialize(fileLocalDto);
+        Long messageId = sendMessage(room, new MessageDto(DataType.FILE, fileLocalBytes));
+        saveMessage(messageId, room.getRoomId(), fileLocalBytes,
+                DataType.FILE, true, null);
+
+        // TODO:
+        var fileDto =
         var fileDtoBytes = SerializationUtils.serialize(fileDto);
         var messageDto = new MessageDto();
         messageDto.setDataType(DataType.FILE);
         try (var encryptor = EncryptionUtils.getEncryption(encryptionPayload, room.getKey())) {
             messageDto.setData(encryptor.encrypt(fileDtoBytes));
         }
-        Long messageId = sendMessage(room.getRoomId(), messageDto);
+        Long messageId = sendMessage(room, messageDto);
         saveMessage(messageId, room.getRoomId(), fileDtoBytes,
                 DataType.FILE, true, null);
     }
@@ -86,7 +87,7 @@ public class MessageService {
         try (var encryptor = EncryptionUtils.getEncryption(encryptionPayload, room.getKey())) {
             messageDto.setData(encryptor.encrypt(textBytes));
         }
-        Long messageId = sendMessage(room.getRoomId(), messageDto);
+        Long messageId = sendMessage(room, messageDto);
         saveMessage(messageId, room.getRoomId(), textBytes, DataType.STRING, true, null);
     }
 
@@ -121,7 +122,7 @@ public class MessageService {
                         room.setKey(sharedSecret);
                         room.setStatus(RoomStatus.AGREED);
                         var encryptionInfo = (EncryptionPayload) SerializationUtils.deserialize(room.getEncryptionPayload());
-                        sendMessage(room.getRoomId(), new OpenKeyExchangeDto(myOpenKey.toString(), encryptionInfo));
+                        sendMessage(room, new OpenKeyExchangeDto(myOpenKey.toString(), encryptionInfo));
                         roomRepository.save(room);
                     } else { // receive from room creator
                         var mySecretKey = room.getKey();
