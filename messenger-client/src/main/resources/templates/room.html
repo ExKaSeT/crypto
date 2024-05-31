@@ -942,7 +942,7 @@
         $('#progress-percentage').text('0%');
 
         $.ajax({
-            url: `/rooms/${roomId}/send`,
+            url: `/rooms/${roomId}/message`,
             type: 'POST',
             data: formData,
             processData: false,
@@ -1014,6 +1014,8 @@
                     $('.scrollable-chat-panel').scrollTop(position);
                     $('.scrollable-chat-panel').perfectScrollbar('update');
                 }
+                // Обновление изменяемых сообщений после основного fetch
+                updateChangingMessages();
             },
             error: function(error) {
                 console.error('Error fetching messages:', error);
@@ -1021,52 +1023,82 @@
         });
     }
 
+    function updateChangingMessages() {
+        $('[data-changing-id]').each(function() {
+            var messageId = $(this).data('changing-id');
+            updateMessage(messageId);
+        });
+    }
+
+    function updateMessage(messageId) {
+        $.ajax({
+            url: `/rooms/${roomId}/message/${messageId}`,
+            method: 'GET',
+            success: function(message) {
+                // Обновите существующее сообщение в DOM
+                var existingMessage = $('#message-' + message.id);
+                if (existingMessage.length) {
+                    existingMessage.replaceWith(createMessageElement(message));
+                }
+            },
+            error: function(error) {
+                console.error('Error updating message:', error);
+            }
+        });
+    }
+
     function appendMessage(message) {
         var messageContainer = $('#message-container');
+        var messageElement = createMessageElement(message);
+        messageContainer.append(messageElement);
+    }
+
+    function createMessageElement(message) {
         var messageElement;
         var isImage = Boolean(message.image);
+        var changingAttribute = Boolean(message.changing) ? `data-changing-id="${message.id}"` : '';
 
         if (message.isMine) {
             messageElement = `
-                    <div class="d-flex flex-row-reverse mb-2">
-                        <div class="right-chat-message fs-13 mb-2">
-                            <div class="d-flex flex-row">
-                                ${message.dataType === 'FILE' && !isImage ?
-                `<a style="color: inherit;" href="/rooms/${roomId}/message/${message.id}">
-                                        <div class="pr-2 pb-3">Файл: ${message.filename}</div>
-                                    </a>` : ''}
-                                ${message.dataType === 'STRING' ?
-                `<div class="pr-2 pb-3">${message.text}</div>` : ''}
-                                ${message.dataType === 'FILE' && isImage ?
+                <div id="message-${message.id}" ${changingAttribute} class="d-flex flex-row-reverse mb-2">
+                    <div class="right-chat-message fs-13 mb-2">
+                        <div class="d-flex flex-row">
+                            ${message.dataType === 'FILE' && !isImage ?
+                `<a style="color: inherit;" href="/rooms/${roomId}/file/${message.id}">
+                                    <div class="pr-2 pb-3">Файл: ${message.filename}</div>
+                                </a>` : ''}
+                            ${message.dataType === 'STRING' ?
+                `<div class="pr-2 pb-3" style="white-space: pre-wrap">${message.text}</div>` : ''}
+                            ${message.dataType === 'FILE' && isImage ?
                 `<img src="data:image/${message.imageExtension};base64,${message.imageBytes}" style="max-width: 100%;"/>` : ''}
-                            </div>
-                            <div class="message-options dark">
-                                <div class="message-time" style="white-space: nowrap">
-                                    ${new Date(message.timestamp).toLocaleString('ru-RU')}
-                                </div>
-                            </div>
                         </div>
-                    </div>`;
-        } else {
-            messageElement = `
-                    <div class="left-chat-message fs-13 mb-2">
-                        ${message.dataType === 'FILE' && !isImage ?
-                `<a style="color: inherit;" href="/rooms/${roomId}/message/${message.id}">
-                                <p class="mb-0 pb-3">Файл: ${message.filename}</p>
-                            </a>` : ''}
-                        ${message.dataType === 'STRING' ?
-                `<p class="mb-0 pb-3">${message.text}</p>` : ''}
-                        ${message.dataType === 'FILE' && isImage ?
-                `<img src="data:image/${message.imageExtension};base64,${message.imageBytes}" style="max-width: 100%;"/>` : ''}
-                        <div class="message-options">
+                        <div class="message-options dark">
                             <div class="message-time" style="white-space: nowrap">
                                 ${new Date(message.timestamp).toLocaleString('ru-RU')}
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                </div>`;
+        } else {
+            messageElement = `
+                <div id="message-${message.id}" ${changingAttribute} class="left-chat-message fs-13 mb-2">
+                    ${message.dataType === 'FILE' && !isImage ?
+                `<a style="color: inherit;" href="/rooms/${roomId}/file/${message.id}">
+                            <p class="mb-0 pb-3">Файл: ${message.filename}</p>
+                        </a>` : ''}
+                    ${message.dataType === 'STRING' ?
+                `<p class="mb-0 pb-3" style="white-space: pre-wrap">${message.text}</p>` : ''}
+                    ${message.dataType === 'FILE' && isImage ?
+                `<img src="data:image/${message.imageExtension};base64,${message.imageBytes}" style="max-width: 100%;"/>` : ''}
+                    <div class="message-options">
+                        <div class="message-time" style="white-space: nowrap">
+                            ${new Date(message.timestamp).toLocaleString('ru-RU')}
+                        </div>
+                    </div>
+                </div>`;
         }
 
-        messageContainer.append(messageElement);
+        return messageElement;
     }
 
     // Fetch messages every 3 seconds

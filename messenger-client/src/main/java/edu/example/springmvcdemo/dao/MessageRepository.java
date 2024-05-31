@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface MessageRepository extends JpaRepository<Message, MessageId> {
     List<Message> getMessagesByRoomAndMessageId_IdGreaterThan(Room room, Long messageId);
+
+    List<Message> findAllByRoom_RoomId(Long roomId);
 }

@@ -10,24 +10,23 @@ import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.service.MessageService;
 import edu.example.springmvcdemo.service.RoomService;
 import edu.example.springmvcdemo.service.SerializationUtils;
+import edu.example.springmvcdemo.service.StorageService;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.fileupload2.core.FileItemInput;
-import org.apache.commons.fileupload2.core.FileItemInputIterator;
 import org.apache.commons.fileupload2.jakarta.JakartaServletFileUpload;
 import org.apache.commons.io.IOUtils;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
-import java.io.ByteArrayInputStream;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -42,6 +41,7 @@ public class MessageController {
     private final RoomService roomService;
     private final MessageService messageService;
     private final MessageRepository messageRepository;
+    private final StorageService storageService;
 
     @GetMapping("/{roomId}/messages/{pullFromIdExcluded}")
     public List<ShowMessageDto> pullMessages(@PathVariable Long roomId, @PathVariable Long pullFromIdExcluded) {
@@ -49,28 +49,42 @@ public class MessageController {
 
         return messageRepository
                 .getMessagesByRoomAndMessageId_IdGreaterThan(room, pullFromIdExcluded)
-                .stream().map(ShowMessageDto::fromMessage).toList();
+                .stream().map(messageService::toShowMessageDto).toList();
     }
 
     @GetMapping("/{roomId}/message/{messageId}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long roomId, @PathVariable Long messageId) {
+    public ShowMessageDto getMessage(@PathVariable Long roomId, @PathVariable Long messageId) {
+        return messageService.toShowMessageDto(messageService.getById(messageId, roomId));
+    }
+
+    @GetMapping("/{roomId}/file/{messageId}")
+    public ResponseEntity<StreamingResponseBody> downloadFile(@PathVariable Long roomId, @PathVariable Long messageId) {
         var message = messageRepository.findById(new MessageId(messageId, roomId))
                 .orElseThrow(() -> new EntityNotFoundException("Message not found"));
         if (!message.getDataType().equals(DataType.FILE)) {
             throw new AccessDeniedException("Object is not FILE");
         }
-        // TODO:
+
         var fileDto = (FileLocalDto) SerializationUtils.deserialize(message.getData());
 
-        InputStreamResource resource = new InputStreamResource(new ByteArrayInputStream(fileDto.getData()));
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" +
-                        URLEncoder.encode(fileDto.getFilename(), StandardCharsets.UTF_8) + "\"")
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
+        StreamingResponseBody responseBody = outputStream -> {
+            try (InputStream inputStream = storageService.getFile(fileDto.getLocalFilename())) {
+                byte[] buffer = new byte[1_000_000];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+        };
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", fileDto.getFilename());
+
+        return new ResponseEntity<>(responseBody, headers, HttpStatus.OK);
     }
 
-    @PostMapping("/{roomId}/send")
+    @PostMapping("/{roomId}/message")
     public String sendMessage(@PathVariable Long roomId, HttpServletRequest request) throws IOException {
         Room room = roomService.getById(roomId);
         if (!JakartaServletFileUpload.isMultipartContent(request)) {
@@ -78,7 +92,7 @@ public class MessageController {
         }
 
         JakartaServletFileUpload upload = new JakartaServletFileUpload();
-        FileItemInputIterator iterStream = upload.getItemIterator(request);
+        var iterStream = upload.getItemIterator(request);
         while (iterStream.hasNext()) {
             FileItemInput item = iterStream.next();
             var formName = SendMessageFormName.getIgnoreCase(item.getFieldName());
@@ -97,15 +111,10 @@ public class MessageController {
                 case FILE -> {
                     var filename = item.getName();
                     if (nonNull(filename) && !filename.isBlank()) {
-
+                        messageService.sendFileEncrypted(room, filename, stream);
                     }
                 }
             }
-        }
-
-
-        if (nonNull(file) && nonNull(file.getOriginalFilename()) && !file.getOriginalFilename().isBlank()) {
-            messageService.sendFileEncrypted(room, file);
         }
         return "redirect:/rooms/" + roomId;
     }

@@ -1,13 +1,16 @@
 package edu.example.springmvcdemo.service;
 
 import edu.example.springmvcdemo.config.RestClientConfig;
+import edu.example.springmvcdemo.dao.MessageRepository;
 import edu.example.springmvcdemo.dao.RoomRepository;
 import edu.example.springmvcdemo.dto.encryption.EncryptionPayload;
+import edu.example.springmvcdemo.dto.message.FileLocalDto;
 import edu.example.springmvcdemo.dto.message.OpenKeyExchangeDto;
 import edu.example.springmvcdemo.dto.rest_dto.room.CreateRoomResponseDto;
 import edu.example.springmvcdemo.dto.rest_dto.room.UserRoomDto;
 import edu.example.springmvcdemo.dto.room.RoomForm;
 import edu.example.springmvcdemo.exception.EntityNotFoundException;
+import edu.example.springmvcdemo.model.DataType;
 import edu.example.springmvcdemo.model.EncryptionType;
 import edu.example.springmvcdemo.model.Room;
 import edu.example.springmvcdemo.model.RoomStatus;
@@ -32,6 +35,8 @@ public class RoomService {
     private final RestClientConfig restClientConfig;
     private final UserSessionService userSessionService;
     private final MessageService messageService;
+    private final MessageRepository messageRepository;
+    private final StorageService storageService;
 
     public Room getById(long roomId) {
         return roomRepository.findById(roomId)
@@ -104,6 +109,13 @@ public class RoomService {
                 .header("Cookie", userSessionService.getAccessCookieString())
                 .retrieve();
 
+        for (var message : messageRepository.findAllByRoom_RoomId(roomId)) {
+            if (!message.getDataType().equals(DataType.FILE)) {
+                continue;
+            }
+            var fileLocalDto = (FileLocalDto) SerializationUtils.deserialize(message.getData());
+            storageService.deleteFile(fileLocalDto.getLocalFilename());
+        }
         roomRepository.delete(room);
     }
 

@@ -28,6 +28,8 @@ import static java.util.Objects.isNull;
 @RequiredArgsConstructor
 public class MessagingService {
 
+    private static final int MAX_GET_RECORDS_COUNT = 20;
+
     private final RoomService roomService;
     private final KafkaTemplate<Object, Object> allAcksKafkaTemplate;
     private final KafkaConfig kafkaConfig;
@@ -81,6 +83,9 @@ public class MessagingService {
                     .stream().map(Room::getId).toList());
 
             while (true) {
+                if (response.size() >= MAX_GET_RECORDS_COUNT) {
+                    break;
+                }
                 ConsumerRecords<Object, byte[]> records = consumer.poll(Duration.ofMillis(100));
                 if (records.isEmpty()) {
                     break;

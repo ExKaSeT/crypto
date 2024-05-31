@@ -12,6 +12,6 @@ import java.io.Serializable;
 public class FileSendDto implements Serializable {
     private long firstMessageId;
     private byte[] data;
-    private FileStatus status;
     private Long currentBytes;
+    private FileStatus status;
 }

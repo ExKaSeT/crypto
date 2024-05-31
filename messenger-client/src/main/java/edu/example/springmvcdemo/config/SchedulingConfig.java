@@ -27,7 +27,7 @@ public class SchedulingConfig {
         log.info("Tokens update success");
     }
 
-    @Scheduled(cron = "*/5 * * * * *")
+    @Scheduled(fixedRate = 5_000)
     public void updateLocalData() {
         if (isNull(userSessionService.getAccessToken())) {
             return;

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,13 +36,13 @@ public class StorageService {
         return Path.of(storageDir, filename);
     }
 
-    public InputStream createNewFile(String filename) {
+    public OutputStream createNewFile(String filename) {
         Path filePath = getFilePath(filename);
         try {
             if (Files.exists(filePath)) {
                 throw new IOException("File already exists: " + filename);
             }
-            return Files.newInputStream(Files.createFile(filePath));
+            return Files.newOutputStream(filePath);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
