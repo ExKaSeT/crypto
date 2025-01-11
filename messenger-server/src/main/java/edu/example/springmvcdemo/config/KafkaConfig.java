@@ -31,7 +31,7 @@ public class KafkaConfig {
 
     @Bean
     public NewTopic messagesTopic() {
-        return new NewTopic(MESSAGES_TOPIC_NAME, MESSAGES_PARTITION_COUNT, (short) 2);
+        return new NewTopic(MESSAGES_TOPIC_NAME, MESSAGES_PARTITION_COUNT, (short) 1);
     }
 
     @Bean

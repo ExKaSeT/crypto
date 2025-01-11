@@ -33,7 +33,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private static final String[] ALLOWED_URL_PATTERNS = {"/auth/**",
-            "/swagger-ui/**", "/v3/api-docs/**"};
+            "/swagger-ui/**", "/v3/api-docs/**", "/actuator/prometheus"};
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, LogoutSuccessHandler logoutHandler,

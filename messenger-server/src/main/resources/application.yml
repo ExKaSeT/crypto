@@ -30,12 +30,10 @@ spring:
         spring.json.trusted.packages: "*"
     admin:
       properties:
-        min-in-sync-replicas: 2
+        min-in-sync-replicas: 1
     listener.ack-mode: manual
     bootstrap-servers:
       - localhost:9092
-      - localhost:9093
-      - localhost:9094
 
   cloud:
     zookeeper:
@@ -44,3 +42,7 @@ spring:
 
 app:
   group-id: server
+
+management:
+  endpoints.web.exposure.include: '*'
+  endpoint.health.show.details: always
